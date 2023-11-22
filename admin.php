@@ -1,3 +1,16 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, user-scalable=no, width=device-width">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>后台管理 - 星跃短链接生成器</title>
+    <script src="js/jquery.js"></script>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.min.css" media="all">
+    <script src="//cdn.bootcss.com/layer/2.3/layer.js"></script>
+</head>
 <?php
 header("content-type:text/html;charset=utf-8");
 
