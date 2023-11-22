@@ -19,7 +19,7 @@ if (isset($_POST['url'])) {
     if (strpos($_POST['url'], 'http') !== false) {
         echo '';
     } else {
-        die('链接必须使用 http:// 或 https:// 开头');
+        die('链接必须使用 http://或https:// 开头');
     }
 
     $conn = mysqli_connect($dbhost, $dbuser, $dbpass);
@@ -32,16 +32,12 @@ if (isset($_POST['url'])) {
 
     $t = addcslashes(mysqli_real_escape_string($conn, base64_encode($_POST['url'])), "%_");
     $ip_t = $_SERVER["REMOTE_ADDR"];
-
-    $short = generateRandomString(); // 初始生成随机字符串
-
+    $short = generateRandomString(); // 生成随机字符串
     // 循环直到找到不重复的 $short
     while (true) {
         $sql = "SELECT COUNT(*) FROM go_to_url WHERE short_url = '$short'";
         $checkResult = mysqli_query($conn, $sql);
-        $row = mysqli_fetch_array($checkResult);
-
-        if ($row[0] == 0) {
+        if ($checkResult->num_rows == 0) {
             // 生成的 $short 不重复，跳出循环
             break;
         } else {
@@ -49,24 +45,34 @@ if (isset($_POST['url'])) {
             $short = generateRandomString();
         }
     }
+    $sql = "select short_url from go_to_url where url='$t'";
 
-    $sql = "INSERT INTO go_to_url " .
-        "(url,short_url,ip,add_date,uid) " .
-        "VALUES " .
-        "('$t','$short','$ip_t',NOW(),0)";
-
+    mysqli_select_db($conn, $dbname);
     $retval = mysqli_query($conn, $sql);
 
-    if (!$retval) {
-        die('无法插入数据: ' . mysqli_error($conn));
-    }
+    if ($retval->num_rows == 0) {
+        $sql = "INSERT INTO go_to_url " .
+            "(url,short_url,ip,add_date,uid) " .
+            "VALUES " .
+            "('$t','$short','$ip_t',NOW(),0)";
 
-    $sql = 'SELECT MAX(num) FROM go_to_url';
+        $retval = mysqli_query($conn, $sql);
 
-    $retval = mysqli_query($conn, $sql);
+        if (!$retval) {
+            die('无法插入数据: ' . mysqli_error($conn));
+        }
 
-    while ($row = mysqli_fetch_array($retval)) {
-        echo $my_url . $short;
+        $sql = 'SELECT MAX(num) FROM go_to_url';
+
+        $retval = mysqli_query($conn, $sql);
+
+        while ($row = mysqli_fetch_array($retval)) {
+            echo $my_url . $short;
+        }
+    } else {
+        while ($row = mysqli_fetch_array($retval)) {
+            echo $my_url . $row['short_url'];
+        }
     }
 
     mysqli_close($conn);
