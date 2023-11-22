@@ -4,10 +4,8 @@ include '../config.php';
 
 // 检查 POST 请求中是否设置了 'num' 参数
 if (isset($_POST['num'])) {
-    // 对输入进行过滤，防止 SQL 注入
-    $num = mysqli_real_escape_string($conn, $_POST['num']);
-
     // 建立与数据库的连接
+    $num = $_POST['num'];
     $conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
 
     if (!$conn) {

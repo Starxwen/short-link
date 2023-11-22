@@ -173,16 +173,14 @@ EOF;
                 // 发送 Ajax 请求删除数据
                 $.ajax({
                     type: "POST",
-                    url: "ajax/delete_data.php", // 替换成实际的处理删除请求的 PHP 文件
+                    url: "/ajax/delete_data.php",
                     data: { num: num },
                     success: function (response) {
-                        // 在这里处理删除成功后的逻辑
-                        // 例如，你可以重新加载页面或更新表格等
+                        alert("删除成功");
                         location.reload();
                     },
                     error: function (error) {
-                        // 在这里处理删除失败的逻辑
-                        console.error("删除失败: " + error);
+                        alert("删除失败: " + error);
                     }
                 });
             }
