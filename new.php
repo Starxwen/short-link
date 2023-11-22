@@ -25,6 +25,14 @@
         });
     </script>
     <style>
+        /* 媒体查询 - 当边框小于1024px时应用的样式 */
+        @media (max-width: 1024px) {
+            .container {
+                width: 80%;
+                /* 或者设置其他你认为合适的宽度 */
+            }
+        }
+
         body {
             font-family: 'Arial', sans-serif;
             background-image: url(1.jpg);
@@ -43,7 +51,7 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 50%;
+            width: 30%;
             /* 调整容器宽度 */
         }
 
