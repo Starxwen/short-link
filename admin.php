@@ -119,7 +119,7 @@
                     "<td>{$row['ip']} </td> " .
                     "<td>{$row['add_date']} </td> " .
                     "<td>{$row['uid']} </td> " .
-                    "<td>删除 </td> " .
+                    "<td><button class='delete-btn' data-num='{$row['num']}'>删除</button></td> " .
                     "</tr>";
             }
 
@@ -157,5 +157,37 @@ EOF;
     }
     ?>
 </body>
+<script>
+    // 使用 jQuery 来处理点击事件
+    $(document).ready(function () {
+        // 给所有类名为 delete-btn 的按钮添加点击事件
+        $('.delete-btn').click(function () {
+            // 获取按钮所在行的 num 属性值
+            var num = $(this).data('num');
+
+            // 弹窗确认删除
+            var isConfirmed = confirm("确认删除编号为 " + num + " 的数据吗？");
+
+            // 如果用户确认删除
+            if (isConfirmed) {
+                // 发送 Ajax 请求删除数据
+                $.ajax({
+                    type: "POST",
+                    url: "ajax/delete_data.php", // 替换成实际的处理删除请求的 PHP 文件
+                    data: { num: num },
+                    success: function (response) {
+                        // 在这里处理删除成功后的逻辑
+                        // 例如，你可以重新加载页面或更新表格等
+                        location.reload();
+                    },
+                    error: function (error) {
+                        // 在这里处理删除失败的逻辑
+                        console.error("删除失败: " + error);
+                    }
+                });
+            }
+        });
+    });
+</script>
 
 </html>
