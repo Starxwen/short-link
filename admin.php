@@ -93,7 +93,7 @@
     if (isset($_POST['password'])) {
         if (md5($_POST['password']) == $admin_password) {
             echo '<div class="container"><h2>admin后台</h2>';
-            echo '<table><tr><td>编号</td><td>URL地址</td><td>短链接</td><td>用户IP地址</td><td>添加日期</td></tr>';
+            echo '<table><tr><td>编号</td><td>URL地址</td><td>短链接</td><td>用户IP地址</td><td>添加日期</td><td>用户id</td><td>操作</td></tr>';
 
             $conn = mysqli_connect($dbhost, $dbuser, $dbpass);
 
@@ -103,7 +103,7 @@
 
             mysqli_query($conn, "set names utf8");
 
-            $sql = 'SELECT num, url, short_url, ip, add_date FROM go_to_url';
+            $sql = 'SELECT num, url, short_url, ip, add_date, uid FROM go_to_url';
 
             mysqli_select_db($conn, $dbname);
             $retval = mysqli_query($conn, $sql);
@@ -118,6 +118,8 @@
                     "<td>" . $my_url . $row['short_url'] . "</td> " .
                     "<td>{$row['ip']} </td> " .
                     "<td>{$row['add_date']} </td> " .
+                    "<td>{$row['uid']} </td> " .
+                    "<td>删除 </td> " .
                     "</tr>";
             }
 
@@ -131,7 +133,6 @@
 <div class="login-container">
     <h1>密码错误</h1>
     <form method="post" action="admin.php">
-       <p><label for="password">密码:</label></p>
        <p><input type="password" name="password" id="password"></p>
        <button type="submit">登录</button>
     </form>
@@ -146,7 +147,6 @@ EOF;
 <div class="login-container">
     <h1>请输入密码</h1>
     <form method="post" action="admin.php">
-       <p><label for="password">密码:</label></p>
        <p><input type="password" name="password" id="password"></p>
        <button type="submit">登录</button>
     </form>
