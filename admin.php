@@ -176,7 +176,6 @@ EOF;
                     url: "/ajax/delete_data.php",
                     data: { num: num },
                     success: function (response) {
-                        alert("删除成功");
                         location.reload();
                     },
                     error: function (error) {
