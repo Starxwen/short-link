@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head lang="en">
     <meta charset="UTF-8">
@@ -19,30 +19,74 @@
                         $('#aaa').html("<input class='layui-input' type='text' value='" + data + "' />");
                     });
                 } else {
-                    alert("链接不规范，必须使用http://或https://开头");
+                    alert("链接不规范，必须使用 http:// 或 https:// 开头");
                 }
             });
         });
-
-
     </script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-image: url(1.jpg);
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 50%;
+            /* 调整容器宽度 */
+        }
+
+        .container h1 {
+            font-size: 24px;
+            color: #333;
+            margin-top: 20px;
+            /* 增加标题与输入框的间距 */
+            margin-bottom: 40px;
+            /* 增加标题与输入框的间距 */
+        }
+
+        .container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 30px;
+            box-sizing: border-box;
+        }
+
+        .container button {
+            background-color: #009688;
+            color: #fff;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        #aaa {
+            margin-top: 40px;
+        }
+    </style>
 </head>
-<center>
 
-    <body class="center-vh" style="background-image: url(1.jpg); background-size: cover;">
-        <div class="layui-form-item">
+<body>
+    <div class="container">
+        <h1>短链接在线生成</h1>
+        <input class='layui-input' type='text' id='t' placeholder="请输入你的长链接" value='' /><br>
+        <p><button class="layui-btn layui-btn-primary" id='b'>生成短链接</button></p>
+        <p id='aaa'></p>
+        <p>© 2023 <a href="https://cloud.xwwen.com" target="_blank">星跃云</a></p>
+    </div>
 
-            <h1>短链接在线生成</h1>
-            <input class='layui-input' type='text' id='t' placeholder="请输入你的长链接" value='' /></br>
-            <p><button class="layui-btn layui-btn-primary" id='b'>生成短链接</button></p>
-            <p id='aaa'></p>
-        </div>
-</center>
-<center>
-    <div class="layui-trans layadmin-user-login-footer" style="color: red;">
-        <p>© 2023 <a href="/" target="_blank" style="color: red;">星跃云</a></p>
-</center>
-</div>
 </body>
 
 </html>
