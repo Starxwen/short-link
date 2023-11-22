@@ -19,6 +19,7 @@ echo '数据库连接成功，开始新建数据表……<br />';
 $sql = "CREATE TABLE go_to_url( " .
     "num INT NOT NULL AUTO_INCREMENT, " .
     "url VARCHAR(450) NOT NULL, " .
+    "short_url VARCHAR(450) NOT NULL, " .
     "ip VARCHAR(50) NOT NULL, " .
     "add_date DATE, " .
     "PRIMARY KEY ( num ))ENGINE=InnoDB DEFAULT CHARSET=utf8; ";

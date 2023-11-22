@@ -3,10 +3,10 @@ header("content-type:text/html;charset=utf-8");
 
 include 'config.php';
 
-if(isset($_POST['password'])){
-    if(md5($_POST['password'])==$admin_password){
+if (isset($_POST['password'])) {
+    if (md5($_POST['password']) == $admin_password) {
         echo '<center><h1>Welcome！</h1>';
-    }else{
+    } else {
         echo <<<EOF
 <h1>密码错误</h1>
 <form method="post" action="admin.php"> 
@@ -17,7 +17,7 @@ EOF;
 
         exit();
     }
-}else{
+} else {
     echo <<<EOF
 <h1>请输入密码</h1>
 <form method="post" action="admin.php"> 
@@ -31,34 +31,32 @@ EOF;
 
 $conn = mysqli_connect($dbhost, $dbuser, $dbpass);
 
-if(! $conn )
-{
+if (!$conn) {
     die('连接失败: ' . mysqli_error($conn));
 }
 
-mysqli_query($conn , "set names utf8");
- 
-$sql = 'SELECT num, url, ip, add_date
-        FROM go_to_url';
- 
-mysqli_select_db( $conn, $dbname );
-$retval = mysqli_query( $conn, $sql );
+mysqli_query($conn, "set names utf8");
 
-if(! $retval )
-{
+$sql = 'SELECT num, url, short_url, ip, add_date
+        FROM go_to_url';
+
+mysqli_select_db($conn, $dbname);
+$retval = mysqli_query($conn, $sql);
+
+if (!$retval) {
     die('无法读取数据: ' . mysqli_error($conn));
 }
 
 echo '<h2>admin后台</h2>';
-echo '<table border="1"><tr><td>编号</td><td>URL地址</td><td>用户IP地址</td><td>添加日期</td></tr>';
+echo '<table border="1"><tr><td>编号</td><td>URL地址</td><td>短链接</td><td>用户IP地址</td><td>添加日期</td></tr>';
 
-while($row = mysqli_fetch_array($retval, MYSQLI_ASSOC))
-{
-    echo "<tr><td> {$row['num']}</td> ".
-         "<td>".base64_decode($row['url'])."</td> ".
-         "<td>{$row['ip']} </td> ".
-         "<td>{$row['add_date']} </td> ".
-         "</tr>";
+while ($row = mysqli_fetch_array($retval, MYSQLI_ASSOC)) {
+    echo "<tr><td> {$row['num']}</td> " .
+        "<td>" . base64_decode($row['url']) . "</td> " .
+        "<td>" . $row['short_url'] . "</td> " .
+        "<td>{$row['ip']} </td> " .
+        "<td>{$row['add_date']} </td> " .
+        "</tr>";
 }
 
 echo '</table></center>';

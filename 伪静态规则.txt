@@ -1,0 +1,11 @@
+Apache伪静态
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^([^/]+)$ index.php?dest=$1 [L,QSA]
+</IfModule>
+
+Nginx伪静态规则
+location ~ ^/([a-zA-Z0-9]+)$ {
+    rewrite ^/([a-zA-Z0-9]+)$ /index.php?dest=$1 last;
+}
