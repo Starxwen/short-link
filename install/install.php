@@ -29,8 +29,8 @@ $sql2 = "CREATE TABLE go_to_url( " .
     "uid INT NOT NULL AUTO_INCREMENT, " .
     "username VARCHAR(64) NOT NULL, " .
     "password VARCHAR(128) NOT NULL, " .
-    "mail VARCHAR(32) NOT NULL, " .
-    "group VARCHAR(32) NOT NULL, " .
+    "email VARCHAR(32) NOT NULL, " .
+    "ugroup VARCHAR(32) NOT NULL, " .
     "PRIMARY KEY ( uid ))ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
 
 mysqli_select_db($conn, $dbname);
