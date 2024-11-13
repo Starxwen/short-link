@@ -6,7 +6,7 @@
 
 本项目为二开，原作者仓库：https://gitee.com/jsy-1/short-url
 
-二开优化功能,新增用户等功能，演示网站：https://6er.cn
+二开优化功能,新增用户等功能，演示网站：https://u.xwyue.com
 
 #### 软件架构
 
