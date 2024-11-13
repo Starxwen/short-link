@@ -14,7 +14,33 @@ function generateRandomString($length = 6)
 
     return $randomString;
 }
+function getClientIp()
+{
+    $headers = [
+        'HTTP_CLIENT_IP',    // 共享互联网访问代理
+        'HTTP_X_FORWARDED_FOR', // 经过一个或多个代理服务器
+        'HTTP_X_FORWARDED',  // 非标准形式的 X-Forwarded-For
+        'HTTP_X_CLUSTER_CLIENT_IP', // 某些负载均衡器或反向代理
+        'HTTP_FORWARDED_FOR', // 另一个非标准形式
+        'HTTP_FORWARDED',    // 另一个非标准形式
+        'REMOTE_ADDR'        // 如果没有代理，直接连接到服务器
+    ];
 
+    foreach ($headers as $header) {
+        if (isset($_SERVER[$header]) && filter_var($_SERVER[$header], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6)) {
+            $ip = $_SERVER[$header];
+            if (strpos($header, 'X_FORWARDED_FOR') !== false) {
+                $ip = explode(',', $ip)[0];
+                $ip = trim($ip);
+            }
+
+            return $ip;
+        }
+    }
+
+    // 如果没有找到有效的 IP 地址，则返回空字符串或默认的 REMOTE_ADDR
+    return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+}
 if (isset($_POST['url'])) {
     if (strpos($_POST['url'], 'http') !== false) {
         echo '';
@@ -31,7 +57,7 @@ if (isset($_POST['url'])) {
     mysqli_query($conn, "set names utf8");
 
     $t = addcslashes(mysqli_real_escape_string($conn, base64_encode($_POST['url'])), "%_");
-    $ip_t = $_SERVER["REMOTE_ADDR"];
+    $ip_t = getClientIp();
     $short = generateRandomString(); // 生成随机字符串
     // 循环直到找到不重复的 $short
     while (true) {
