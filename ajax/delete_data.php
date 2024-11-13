@@ -1,7 +1,11 @@
 <?php
 header("Content-Type: text/plain; charset=utf-8");
-
+session_start();
 include '../config.php';
+
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    die('鉴权失败');
+}
 
 $num = isset($_POST['num']) ? intval($_POST['num']) : 0;
 

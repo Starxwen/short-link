@@ -1,7 +1,12 @@
 <?php
-header("Content-Type: application/json; charset=utf-8");
-
+session_start();
 include '../config.php';
+
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    die(json_encode(['error' => '鉴权失败']));
+}
+
+header("Content-Type: application/json; charset=utf-8");
 
 $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
 $perPage = isset($_POST['perPage']) ? intval($_POST['perPage']) : 10;
