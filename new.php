@@ -51,7 +51,7 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 30%;
+            width: 50%;
             /* 调整容器宽度 */
         }
 
@@ -89,10 +89,15 @@
 <body>
     <div class="container">
         <h1>短链接在线生成</h1>
-        <input class='layui-input' type='text' id='t' placeholder="请输入你的长链接" value='' /><br>
+        <input class='layui-input' type='text' id='t' placeholder="请输入你的长链接" value='' />
         <p><button class="layui-btn layui-btn-primary" id='b'>生成短链接</button></p>
+        <br>
+        <p>
+            <a class="layui-btn layui-btn-primary" href="./login.php">登录</a>
+            <a class="layui-btn layui-btn-primary" href="./register.php">注册</a>
+        </p>
         <p id='aaa'></p>
-        <p>© 2023 <a href="https://cloud.xwwen.com" target="_blank">星跃云</a></p>
+        <p>© 2023-2025 <a href="https://cloud.xwwen.com" target="_blank">星跃云</a></p>
     </div>
 
 </body>

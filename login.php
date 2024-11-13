@@ -3,15 +3,20 @@ session_start();
 include './config.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
     $password = $_POST['password'];
     $password_md5 = md5($password);
 
-    if ($password_md5 === $admin_password_md5) {
-        $_SESSION['logged_in'] = true;
-        header('Location: admin.php'); // 重定向到后台管理页面
-        exit();
+    if ($username == $admin_username) {
+        if ($password_md5 === $admin_password) {
+            $_SESSION['logged_in'] = true;
+            header('Location: admin.php'); // 重定向到后台管理页面
+            exit();
+        } else {
+            $error = '密码错误';
+        }
     } else {
-        $error = '密码错误';
+        $error = '个人登录暂未开启';
     }
 }
 ?>
@@ -21,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <head>
     <meta charset="UTF-8">
-    <title>登录 - 后台管理</title>
+    <title>登录 - 短链接</title>
 </head>
 
 <body>
@@ -30,8 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <p style="color: red;"><?php echo $error; ?></p>
     <?php endif; ?>
     <form method="post" action="">
+        <label for="username">账户:</label>
+        <input type="username" id="username" name="username" required>
+        <br><br>
         <label for="password">密码:</label>
         <input type="password" id="password" name="password" required>
+        <br><br>
         <button type="submit">登录</button>
     </form>
 </body>
