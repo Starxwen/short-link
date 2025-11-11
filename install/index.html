@@ -1,16 +1,398 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统安装 - 星跃短链接</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #9b59b6;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --text-light: #777;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgZmlsbD0idXJsKCNwYXR0ZXJuKSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==');
+            opacity: 0.3;
+        }
+        
+        .install-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 40px;
+            width: 100%;
+            max-width: 700px;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease;
+            overflow: hidden;
+        }
+        
+        .install-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+        }
+        
+        .logo {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .logo-text h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .logo-text p {
+            color: var(--text-light);
+            font-size: 16px;
+        }
+        
+        .install-form {
+            margin: 30px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #444;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        
+        .form-control.error {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+        }
+        
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #c62828;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .success-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #4caf50;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .btn-install {
+            background: linear-gradient(to right, var(--secondary-color), #27ae60);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .btn-install:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+        }
+        
+        .btn-install:active {
+            transform: translateY(0);
+        }
+        
+        .btn-install:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .install-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .install-container {
+                padding: 30px 20px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
 
-<head lang="en">
-  <meta charset="UTF-8">
-  <meta name="viewport"
-    content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, user-scalable=no, width=device-width">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>安装页面</title>
-<link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.min.css" media="all">
-<script src="//cdn.bootcss.com/layer/2.3/layer.js"></script>
-</head>
-<p class="layui-elem-quote">请编辑文件config.php文件，按照提示修改内容，修改后点击下面按钮</p>
-<center><a href="install.php">已修改，点击安装</a></center>
-</head>
+<body>
+    <div class="install-container">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <div class="logo-text">
+                <h2>系统安装向导</h2>
+                <p>星跃短链接 - 快速部署您的短链接服务</p>
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+        
+        <form id="installForm" class="install-form">
+            <div class="form-group">
+                <label for="dbhost">数据库主机地址</label>
+                <input type="text" id="dbhost" name="dbhost" class="form-control" value="localhost" required>
+                <small style="color: var(--text-light); font-size: 12px;">通常为 localhost 或 127.0.0.1</small>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="dbuser">数据库用户名</label>
+                    <input type="text" id="dbuser" name="dbuser" class="form-control" value="short_url" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dbpass">数据库密码</label>
+                    <input type="password" id="dbpass" name="dbpass" class="form-control">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="dbname">数据库名称</label>
+                <input type="text" id="dbname" name="dbname" class="form-control" value="short_url" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="admin_username">管理员用户名</label>
+                    <input type="text" id="admin_username" name="admin_username" class="form-control" value="admin" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="admin_password">管理员密码</label>
+                    <input type="password" id="admin_password" name="admin_password" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="my_url">网站根目录网址</label>
+                <input type="url" id="my_url" name="my_url" class="form-control" placeholder="https://yourdomain.com/" required>
+                <small style="color: var(--text-light); font-size: 12px;">必须以 http:// 或 https:// 开头，以 / 结尾</small>
+            </div>
+            
+            <button type="submit" class="btn-install" id="installBtn">
+                <i class="fas fa-cogs"></i> 开始安装系统
+            </button>
+        </form>
+        
+        <div class="install-info">
+            <i class="fas fa-info-circle"></i> 
+            <strong>安装说明：</strong> 请确保数据库信息填写正确，安装过程将自动创建数据表和配置文件。
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('installForm');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            const installBtn = document.getElementById('installBtn');
+            
+            // URL验证
+            function isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return string.endsWith('/');
+                } catch (_) {
+                    return false;
+                }
+            }
+            
+            // 显示错误信息
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+                successMessage.classList.remove('show');
+                
+                setTimeout(() => {
+                    errorMessage.classList.remove('show');
+                }, 5000);
+            }
+            
+            // 显示成功信息
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.classList.add('show');
+                errorMessage.classList.remove('show');
+            }
+            
+            // 表单提交处理
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 验证表单
+                const myUrl = document.getElementById('my_url').value;
+                if (!isValidUrl(myUrl)) {
+                    showError('网站地址格式不正确，必须以 http:// 或 https:// 开头，且以 / 结尾');
+                    return;
+                }
+                
+                // 禁用按钮，防止重复提交
+                installBtn.disabled = true;
+                installBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 安装中...';
+                
+                // 收集表单数据
+                const formData = new FormData(form);
+                
+                // 发送安装请求
+                fetch('install.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(data => {
+                    if (data.includes('成功')) {
+                        showSuccess('系统安装成功！正在跳转到首页...');
+                        setTimeout(() => {
+                            window.location.href = '../';
+                        }, 2000);
+                    } else {
+                        showError('安装失败：' + data);
+                        installBtn.disabled = false;
+                        installBtn.innerHTML = '<i class="fas fa-cogs"></i> 开始安装系统';
+                    }
+                })
+                .catch(error => {
+                    showError('网络错误：' + error);
+                    installBtn.disabled = false;
+                    installBtn.innerHTML = '<i class="fas fa-cogs"></i> 开始安装系统';
+                });
+            });
+        });
+    </script>
+</body>
 </html>
