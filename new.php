@@ -1,105 +1,339 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head lang="en">
+<html lang="zh-CN">
+<head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=2.0, user-scalable=no, width=device-width">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>星跃短链接生成器</title>
     <script src="js/jquery.js"></script>
     <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.min.css" media="all">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="//cdn.bootcss.com/layer/2.3/layer.js"></script>
-    <script>
-        $(function () {
-            re = /http/;
-            $("#b").click(function () {
-                if (re.test($('#t').val())) {
-                    $.post("add.php", { 'url': $('#t').val() }, function (data, status) {
-                        $('#aaa').html("<input class='layui-input' type='text' value='" + data + "' />");
-                    });
-                } else {
-                    alert("链接不规范，必须使用 http:// 或 https:// 开头");
-                }
-            });
-        });
-    </script>
     <style>
-        /* 媒体查询 - 当边框小于1024px时应用的样式 */
-        @media (max-width: 1024px) {
-            .container {
-                width: 80%;
-                /* 或者设置其他你认为合适的宽度 */
-            }
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #9b59b6;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --text-light: #777;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
         }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background-image: url(1.jpg);
-            background-size: cover;
+        
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-        }
-
-        .container {
-            text-align: center;
-            background-color: rgba(255, 255, 255, 0.7);
             padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 50%;
-            /* 调整容器宽度 */
+            position: relative;
+            overflow-x: hidden;
         }
-
-        .container h1 {
-            font-size: 24px;
-            color: #333;
-            margin-top: 20px;
-            /* 增加标题与输入框的间距 */
-            margin-bottom: 40px;
-            /* 增加标题与输入框的间距 */
-        }
-
-        .container input {
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 10px;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgZmlsbD0idXJsKCNwYXR0ZXJuKSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==');
+            opacity: 0.3;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 40px;
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+        }
+        
+        .logo {
             margin-bottom: 30px;
-            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
-
-        .container button {
-            background-color: #009688;
-            color: #fff;
-            border: none;
+        
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .logo-text h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .logo-text p {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .input-group input {
             width: 100%;
-            cursor: pointer;
-            border-radius: 3px;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: var(--transition);
+            background: #f9f9f9;
         }
-
-        #aaa {
-            margin-top: 40px;
+        
+        .input-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
+            background: white;
+        }
+        
+        .btn-generate {
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+        
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+            animation: slideDown 0.5s ease;
+        }
+        
+        .result-container.show {
+            display: block;
+        }
+        
+        .result-title {
+            font-size: 16px;
+            color: var(--text-light);
+            margin-bottom: 10px;
+        }
+        
+        .result-box {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .result-box input {
+            flex: 1;
+            border: none;
+            padding: 12px 15px;
+            font-size: 15px;
+            background: transparent;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .auth-buttons a {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-login {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--primary-color);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-login:hover {
+            background: rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn-register {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--secondary-color);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .btn-register:hover {
+            background: rgba(46, 204, 113, 0.2);
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .logo-text h1 {
+                font-size: 24px;
+            }
+            
+            .auth-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>短链接在线生成</h1>
-        <input class='layui-input' type='text' id='t' placeholder="请输入你的长链接" value='' />
-        <p><button class="layui-btn layui-btn-primary" id='b'>生成短链接</button></p>
-        <br>
-        <p>
-            <a class="layui-btn layui-btn-primary" href="./login.php">登录</a>
-            <a class="layui-btn layui-btn-primary" href="./register.php">注册</a>
-        </p>
-        <p id='aaa'></p>
-        <p>© 2023-2025 <a href="https://cloud.xwwen.com" target="_blank">星跃云</a></p>
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-link"></i>
+            </div>
+            <div class="logo-text">
+                <h1>星跃短链接生成器</h1>
+                <p>快速生成简洁易记的短链接</p>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <input class='layui-input' type='text' id='t' placeholder="请输入您的长链接（必须以 http:// 或 https:// 开头）" value='' />
+        </div>
+        
+        <button class="btn-generate" id='b'>
+            <i class="fas fa-magic"></i> 生成短链接
+        </button>
+        
+        <div class="auth-buttons">
+            <a href="./login.php" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i> 登录
+            </a>
+            <a href="./register.php" class="btn-register">
+                <i class="fas fa-user-plus"></i> 注册
+            </a>
+        </div>
+        
+        <div id='aaa' class="result-container">
+            <div class="result-title">您的短链接已生成：</div>
+            <div class="result-box">
+                <!-- 结果将通过JavaScript动态插入 -->
+            </div>
+        </div>
+        
+        <div class="footer">
+            © 2023 <a href="https://cloud.xwwen.com" target="_blank">星跃云</a> - 专业的云计算服务
+        </div>
     </div>
 
+    <script>
+        $(function () {
+            re = /http/;
+            $("#b").click(function () {
+                if (re.test($('#t').val())) {
+                    $.post("add.php", { 'url': $('#t').val() }, function (data, status) {
+                        $('#aaa').html("<div class='result-title'>您的短链接已生成：</div><div class='result-box'><input class='layui-input' type='text' value='" + data + "' readonly /></div>");
+                        $('#aaa').addClass('show');
+                    });
+                } else {
+                    layer.msg('链接不规范，必须使用 http:// 或 https:// 开头', {icon: 2});
+                }
+            });
+        });
+    </script>
 </body>
-
 </html>
