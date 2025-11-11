@@ -8,144 +8,277 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>后台管理 - 星跃短链接生成器</title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.min.css" media="all">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/layui/2.5.6/layui.js"></script>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #9b59b6;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --text-light: #777;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
         }
-
-        .layui-container {
-            width: 90%;
+        
+        body {
+            background: #f5f7fa;
+            color: var(--text-color);
+            line-height: 1.6;
         }
-
+        
+        .admin-header {
+            background: linear-gradient(135deg, var(--dark-color) 0%, var(--primary-color) 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .admin-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .admin-header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .admin-container {
+            padding: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-title i {
+            color: var(--primary-color);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
         .table-container {
             overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
         }
-
-        table {
+        
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            table-layout: fixed;
-            /* 确保表格列宽固定 */
         }
-
-        th {
-            text-align: center;
-        }
-
-        td {
+        
+        .data-table th {
+            background-color: #f8f9fa;
             text-align: left;
+            padding: 15px;
+            font-weight: 600;
+            border-bottom: 1px solid #e0e0e0;
+            color: var(--dark-color);
         }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            vertical-align: top;
-            /* 顶部对齐，以便在换行时内容不显得拥挤 */
+        
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
         }
-
-        .pagination {
-            text-align: center;
-            margin-top: 20px;
+        
+        .data-table tr:hover {
+            background-color: #f8f9fa;
         }
-
-        .pagination button {
-            padding: 5px 10px;
-            margin: 0 5px;
-            cursor: pointer;
-        }
-
-        /* 针对URL列的样式调整 */
-        #data-table th:nth-child(2),
-        #data-table td:nth-child(2) {
-            width: 50%;
-            /* 根据需要调整列宽 */
-            word-wrap: break-word;
-            /* 允许长单词或URL在必要时换行 */
-            word-break: break-all;
-            /* 在任意位置换行，包括长单词内 */
-            white-space: normal;
-            /* 允许空白符换行 */
+        
+        .url-cell {
+            max-width: 300px;
             overflow: hidden;
-            /* 隐藏超出单元格的内容（通常与换行结合使用） */
             text-overflow: ellipsis;
-            /* 如果内容仍然超出，则显示省略号（但这在换行时通常不需要） */
+            white-space: nowrap;
         }
-
-        /* 其他列的样式可以保持不变，或者根据需要调整 */
-        #data-table th:nth-child(1),
-        #data-table td:nth-child(1) {
-            width: 5%;
-            text-align: center;
+        
+        .short-url {
+            color: var(--primary-color);
+            font-weight: 500;
         }
-
-        #data-table th:nth-child(3),
-        #data-table td:nth-child(3) {
-            width: 20%;
+        
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: var(--transition);
         }
-
-        #data-table th:nth-child(4),
-        #data-table td:nth-child(4) {
-            width: 10%;
-            text-align: center;
+        
+        .action-btn.delete {
+            color: #e74c3c;
         }
-
-        #data-table th:nth-child(5),
-        #data-table td:nth-child(5) {
-            width: 10%;
-            text-align: center;
+        
+        .action-btn.delete:hover {
+            background-color: rgba(231, 76, 60, 0.1);
         }
-
-        #data-table th:nth-child(6),
-        #data-table td:nth-child(6) {
-            width: 5%;
-            text-align: center;
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 5px;
         }
-
-        #data-table th:nth-child(7),
-        #data-table td:nth-child(7) {
-            width: 5%;
-            text-align: center;
+        
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        
+        .page-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .page-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 15px;
+            }
+            
+            .admin-header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .data-table {
+                font-size: 14px;
+            }
+            
+            .data-table th, .data-table td {
+                padding: 10px 8px;
+            }
         }
     </style>
 </head>
 
 <body>
-
-    <div class="layui-container">
-        <h2>admin后台</h2>
-        <div class="table-container">
-            <table id="data-table">
-                <thead>
-                    <tr>
-                        <th>编号</th>
-                        <th>URL地址</th>
-                        <th>短链接</th>
-                        <th>用户IP地址</th>
-                        <th>添加日期</th>
-                        <th>用户id</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- 数据行将通过JavaScript动态插入 -->
-                </tbody>
-            </table>
+    <div class="admin-header">
+        <h1><i class="fas fa-link"></i> 星跃短链接后台管理</h1>
+        <div class="user-info">
+            <span>欢迎，管理员</span>
+            <button class="logout-btn" onclick="location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
         </div>
-        <div class="pagination" id="pagination"></div>
+    </div>
+    
+    <div class="admin-container">
+        <div class="page-title">
+            <i class="fas fa-tachometer-alt"></i> 链接数据管理
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-table"></i> 链接列表</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="data-table" id="data-table">
+                        <thead>
+                            <tr>
+                                <th width="5%">编号</th>
+                                <th width="40%">URL地址</th>
+                                <th width="20%">短链接</th>
+                                <th width="10%">用户IP</th>
+                                <th width="15%">添加日期</th>
+                                <th width="5%">用户ID</th>
+                                <th width="5%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 数据行将通过JavaScript动态插入 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination" id="pagination">
+                    <!-- 分页按钮将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -166,13 +299,12 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                         data.rows.forEach(function (row) {
                             var tr = $('<tr></tr>');
                             tr.append($('<td></td>').text(row.num));
-                            tr.append($('<td></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
-                            tr.append($('<td></td>').text('<?php include './config.php';
-                            echo $my_url; ?>' + row.short_url));
+                            tr.append($('<td class="url-cell"></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
+                            tr.append($('<td></td>').text('<?php include './config.php'; echo $my_url; ?>' + row.short_url));
                             tr.append($('<td></td>').text(row.ip));
                             tr.append($('<td></td>').text(row.add_date));
                             tr.append($('<td></td>').text(row.uid));
-                            var deleteBtn = $('<button></button>').text('删除').data('num', row.num).click(function () {
+                            var deleteBtn = $('<button class="action-btn delete" title="删除"><i class="fas fa-trash"></i></button>').data('num', row.num).click(function () {
                                 deleteData($(this).data('num'));
                             });
                             tr.append($('<td></td>').append(deleteBtn));
@@ -183,11 +315,11 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                         var pagination = $('#pagination');
                         pagination.empty();
                         for (var i = 1; i <= data.totalPages; i++) {
-                            var btn = $('<button></button>').text(i).click(function () {
+                            var btn = $('<button class="page-btn"></button>').text(i).click(function () {
                                 loadData($(this).text());
                             });
                             if (i === page) {
-                                btn.addClass('layui-btn-disabled');
+                                btn.addClass('active');
                             }
                             pagination.append(btn);
                         }
@@ -199,27 +331,27 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             }
 
             function deleteData(num) {
-                $.ajax({
-                    type: "POST",
-                    url: "ajax/delete_data.php",
-                    data: { num: num },
-                    success: function (response) {
-                        if (response === 'success') {
-                            loadData(currentPage);
-                        } else {
-                            alert("删除失败: " + response);
+                if (confirm("确定要删除这条记录吗？")) {
+                    $.ajax({
+                        type: "POST",
+                        url: "ajax/delete_data.php",
+                        data: { num: num },
+                        success: function (response) {
+                            if (response === 'success') {
+                                loadData(currentPage);
+                            } else {
+                                alert("删除失败: " + response);
+                            }
+                        },
+                        error: function (error) {
+                            alert("删除数据失败: " + error);
                         }
-                    },
-                    error: function (error) {
-                        alert("删除数据失败: " + error);
-                    }
-                });
+                    });
+                }
             }
 
             loadData(currentPage); // 加载第一页数据
         });
     </script>
-
 </body>
-
 </html>
