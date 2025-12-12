@@ -2,66 +2,75 @@
 session_start();
 include './config.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $password_md5 = md5($password);
+// 如果用户已登录，重定向到用户面板
+if (isset($_SESSION['user_id']) && $_SESSION['user_id'] > 0) {
+    header('Location: user_panel.php');
+    exit();
+}
 
-    // 检查是否是管理员登录
-    if ($username == $admin_username) {
-        if ($password_md5 === $admin_password) {
-            $_SESSION['logged_in'] = true;
-            $_SESSION['user_id'] = 0; // 管理员用户ID设为0
-            $_SESSION['username'] = $admin_username;
-            $_SESSION['user_group'] = 'admin';
-            header('Location: admin.php');
-            exit();
-        } else {
-            $error = '密码错误';
-        }
+$error = '';
+$success = '';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+    $email = trim($_POST['email']);
+    
+    // 验证输入
+    if (empty($username) || empty($password) || empty($confirm_password)) {
+        $error = '请填写所有必填字段';
+    } elseif (strlen($username) < 3 || strlen($username) > 20) {
+        $error = '用户名长度必须在3-20个字符之间';
+    } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
+        $error = '用户名只能包含字母、数字和下划线';
+    } elseif (strlen($password) < 6) {
+        $error = '密码长度至少6个字符';
+    } elseif ($password !== $confirm_password) {
+        $error = '两次输入的密码不一致';
+    } elseif (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = '邮箱格式不正确';
     } else {
-        // 普通用户登录
+        // 连接数据库
         $conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
-        if ($conn) {
+        if (!$conn) {
+            $error = '数据库连接失败';
+        } else {
             mysqli_query($conn, "set names utf8");
+            
+            // 检查用户名是否已存在
             $username = mysqli_real_escape_string($conn, $username);
+            $check_sql = "SELECT uid FROM users WHERE username = '$username'";
+            $check_result = mysqli_query($conn, $check_sql);
             
-            $sql = "SELECT uid, username, password, ugroup, status FROM users WHERE username = '$username'";
-            $result = mysqli_query($conn, $sql);
-            
-            if ($result && mysqli_num_rows($result) > 0) {
-                $user = mysqli_fetch_assoc($result);
-                
-                if ($user['status'] == 0) {
-                    $error = '账户已被禁用';
-                } elseif ($password_md5 === $user['password']) {
-                    // 登录成功
-                    $_SESSION['logged_in'] = true;
-                    $_SESSION['user_id'] = $user['uid'];
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['user_group'] = $user['ugroup'];
-                    
-                    // 更新最后登录时间
-                    $update_sql = "UPDATE users SET last_login = NOW() WHERE uid = " . $user['uid'];
-                    mysqli_query($conn, $update_sql);
-                    
-                    // 根据用户组跳转
-                    if ($user['ugroup'] == 'admin') {
-                        header('Location: admin.php');
-                    } else {
-                        header('Location: user_panel.php');
-                    }
-                    exit();
-                } else {
-                    $error = '密码错误';
-                }
+            if (mysqli_num_rows($check_result) > 0) {
+                $error = '用户名已存在';
             } else {
-                $error = '用户不存在';
+                // 创建新用户
+                $password_md5 = md5($password);
+                $email = mysqli_real_escape_string($conn, $email);
+                
+                // 检查表结构，确定是否有email字段
+                $columns_check = mysqli_query($conn, "SHOW COLUMNS FROM users");
+                $existing_columns = [];
+                while ($row = mysqli_fetch_assoc($columns_check)) {
+                    $existing_columns[] = $row['Field'];
+                }
+                
+                if (in_array('email', $existing_columns)) {
+                    $insert_sql = "INSERT INTO users (username, password, email, ugroup) VALUES ('$username', '$password_md5', '$email', 'user')";
+                } else {
+                    $insert_sql = "INSERT INTO users (username, password, ugroup) VALUES ('$username', '$password_md5', 'user')";
+                }
+                
+                if (mysqli_query($conn, $insert_sql)) {
+                    $success = '注册成功！请登录您的账户';
+                } else {
+                    $error = '注册失败：' . mysqli_error($conn);
+                }
             }
             
             mysqli_close($conn);
-        } else {
-            $error = '数据库连接失败';
         }
     }
 }
@@ -71,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 星跃短链接</title>
+    <title>注册 - 星跃短链接</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -117,13 +126,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             opacity: 0.3;
         }
         
-        .login-container {
+        .register-container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
             box-shadow: var(--shadow);
             padding: 40px;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             text-align: center;
             position: relative;
             z-index: 1;
@@ -133,14 +142,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             overflow: hidden;
         }
         
-        .login-container::before {
+        .register-container::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 5px;
-            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            background: linear-gradient(to right, var(--secondary-color), var(--accent-color));
         }
         
         .logo {
@@ -154,14 +163,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .logo-icon {
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 24px;
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
         }
         
         .logo-text h2 {
@@ -176,23 +185,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-size: 14px;
         }
         
-        .error-message {
-            background-color: #ffebee;
-            color: #c62828;
+        .message {
             padding: 10px 15px;
             border-radius: 6px;
             margin-bottom: 20px;
             font-size: 14px;
-            border-left: 4px solid #c62828;
             display: none;
         }
         
-        .error-message.show {
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .success-message {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .message.show {
             display: block;
             animation: fadeIn 0.3s ease;
         }
         
-        .login-form {
+        .register-form {
             display: flex;
             flex-direction: column;
         }
@@ -221,13 +239,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
             outline: none;
         }
         
-        .btn-login {
-            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+        .btn-register {
+            background: linear-gradient(to right, var(--secondary-color), var(--accent-color));
             color: white;
             border: none;
             padding: 13px 15px;
@@ -239,12 +257,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-top: 10px;
         }
         
-        .btn-login:hover {
+        .btn-register:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
         }
         
-        .btn-login:active {
+        .btn-register:active {
             transform: translateY(0);
         }
         
@@ -271,7 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         @media (max-width: 480px) {
-            .login-container {
+            .register-container {
                 padding: 30px 20px;
             }
         }
@@ -279,39 +297,60 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 
 <body>
-    <div class="login-container">
+    <div class="register-container">
         <div class="logo">
             <div class="logo-icon">
-                <i class="fas fa-lock"></i>
+                <i class="fas fa-user-plus"></i>
             </div>
             <div class="logo-text">
-                <h2>用户登录</h2>
-                <p>星跃短链接系统</p>
+                <h2>用户注册</h2>
+                <p>创建您的星跃短链接账户</p>
             </div>
         </div>
         
-        <?php if (isset($error)): ?>
-            <div class="error-message show"><?php echo $error; ?></div>
+        <?php if ($error): ?>
+            <div class="message error-message show"><?php echo $error; ?></div>
         <?php endif; ?>
         
-        <form method="post" action="" class="login-form">
+        <?php if ($success): ?>
+            <div class="message success-message show"><?php echo $success; ?></div>
+        <?php endif; ?>
+        
+        <?php if (!$success): ?>
+        <form method="post" action="" class="register-form">
             <div class="form-group">
-                <label for="username">用户名</label>
-                <input type="text" id="username" name="username" class="form-control" placeholder="请输入用户名" required>
+                <label for="username">用户名 *</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="3-20个字符，只能包含字母、数字和下划线" required value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
             </div>
             
             <div class="form-group">
-                <label for="password">密码</label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="请输入密码" required>
+                <label for="email">邮箱</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="选填，用于找回密码" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
             </div>
             
-            <button type="submit" class="btn-login">登录系统</button>
+            <div class="form-group">
+                <label for="password">密码 *</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="至少6个字符" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">确认密码 *</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="再次输入密码" required>
+            </div>
+            
+            <button type="submit" class="btn-register">注册账户</button>
         </form>
+        <?php endif; ?>
         
         <div class="back-link">
             <a href="new.php"><i class="fas fa-arrow-left"></i> 返回首页</a>
-            <br>
-            <a href="register.php"><i class="fas fa-user-plus"></i> 还没有账户？立即注册</a>
+            <?php if ($success): ?>
+                <br><br>
+                <a href="login.php"><i class="fas fa-sign-in-alt"></i> 立即登录</a>
+            <?php else: ?>
+                <br>
+                <a href="login.php"><i class="fas fa-sign-in-alt"></i> 已有账户？立即登录</a>
+            <?php endif; ?>
         </div>
     </div>
 </body>

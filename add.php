@@ -59,6 +59,14 @@ if (isset($_POST['url'])) {
     $t = addcslashes(mysqli_real_escape_string($conn, base64_encode($_POST['url'])), "%_");
     $ip_t = getClientIp();
     $short = generateRandomString(); // 生成随机字符串
+    
+    // 获取用户ID，如果用户已登录则使用用户ID，否则为0
+    $user_id = 0;
+    session_start();
+    if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_SESSION['user_id'])) {
+        $user_id = $_SESSION['user_id'];
+    }
+    
     // 循环直到找到不重复的 $short
     while (true) {
         $sql = "SELECT COUNT(*) FROM go_to_url WHERE short_url = '$short'";
@@ -71,7 +79,9 @@ if (isset($_POST['url'])) {
             $short = generateRandomString();
         }
     }
-    $sql = "select short_url from go_to_url where url='$t'";
+    
+    // 检查是否已存在相同的URL（对于同一用户）
+    $sql = "select short_url from go_to_url where url='$t' AND uid = $user_id";
 
     mysqli_select_db($conn, $dbname);
     $retval = mysqli_query($conn, $sql);
@@ -80,7 +90,7 @@ if (isset($_POST['url'])) {
         $sql = "INSERT INTO go_to_url " .
             "(url,short_url,ip,add_date,uid) " .
             "VALUES " .
-            "('$t','$short','$ip_t',NOW(),0)";
+            "('$t','$short','$ip_t',NOW(),$user_id)";
 
         $retval = mysqli_query($conn, $sql);
 

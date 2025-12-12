@@ -2,23 +2,27 @@
 session_start();
 include './config.php';
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+// 检查用户是否已登录
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || !isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
 }
 
-// 检查是否是管理员或具有管理员权限的用户
-if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $_SESSION['user_id'] !== 0)) {
-    header('Location: user_panel.php');
+// 如果是管理员，重定向到管理面板
+if (isset($_SESSION['user_group']) && $_SESSION['user_group'] === 'admin') {
+    header('Location: admin.php');
     exit();
 }
+
+$user_id = $_SESSION['user_id'];
+$username = $_SESSION['username'];
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>后台管理 - 星跃短链接生成器</title>
+    <title>用户面板 - 星跃短链接</title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.min.css" media="all">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
@@ -49,8 +53,8 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             line-height: 1.6;
         }
         
-        .admin-header {
-            background: linear-gradient(135deg, var(--dark-color) 0%, var(--primary-color) 100%);
+        .user-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
             color: white;
             padding: 15px 30px;
             display: flex;
@@ -59,7 +63,7 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             box-shadow: var(--shadow);
         }
         
-        .admin-header h1 {
+        .user-header h1 {
             font-size: 24px;
             font-weight: 600;
             display: flex;
@@ -67,7 +71,7 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             gap: 10px;
         }
         
-        .admin-header .user-info {
+        .user-header .user-info {
             display: flex;
             align-items: center;
             gap: 15px;
@@ -87,7 +91,7 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             background: rgba(255, 255, 255, 0.3);
         }
         
-        .admin-container {
+        .user-container {
             padding: 25px;
             max-width: 1200px;
             margin: 0 auto;
@@ -219,12 +223,44 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             border-color: var(--primary-color);
         }
         
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        
+        .create-btn {
+            background: linear-gradient(to right, var(--secondary-color), var(--accent-color));
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .create-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+        
         @media (max-width: 768px) {
-            .admin-container {
+            .user-container {
                 padding: 15px;
             }
             
-            .admin-header {
+            .user-header {
                 padding: 15px 20px;
                 flex-direction: column;
                 gap: 10px;
@@ -243,22 +279,25 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
 </head>
 
 <body>
-    <div class="admin-header">
-        <h1><i class="fas fa-link"></i> 星跃短链接后台管理</h1>
+    <div class="user-header">
+        <h1><i class="fas fa-link"></i> 星跃短链接用户面板</h1>
         <div class="user-info">
-            <span>欢迎，<?php echo htmlspecialchars($_SESSION['username']); ?></span>
+            <span>欢迎，<?php echo htmlspecialchars($username); ?></span>
             <button class="logout-btn" onclick="location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
         </div>
     </div>
     
-    <div class="admin-container">
+    <div class="user-container">
         <div class="page-title">
-            <i class="fas fa-tachometer-alt"></i> 链接数据管理
+            <i class="fas fa-tachometer-alt"></i> 我的短链接
         </div>
         
         <div class="card">
             <div class="card-header">
-                <h2><i class="fas fa-table"></i> 链接列表</h2>
+                <h2><i class="fas fa-list"></i> 我的链接列表</h2>
+                <button class="create-btn" onclick="location.href='new.php'">
+                    <i class="fas fa-plus"></i> 创建新链接
+                </button>
             </div>
             <div class="card-body">
                 <div class="table-container">
@@ -268,10 +307,9 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                                 <th width="5%">编号</th>
                                 <th width="40%">URL地址</th>
                                 <th width="20%">短链接</th>
-                                <th width="10%">用户IP</th>
                                 <th width="15%">添加日期</th>
-                                <th width="5%">用户ID</th>
-                                <th width="5%">操作</th>
+                                <th width="10%">点击次数</th>
+                                <th width="10%">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -290,26 +328,32 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
     <script>
         $(document).ready(function () {
             var currentPage = 1;
-            var perPage = 12; // 每页显示的数据条数
+            var perPage = 10; // 每页显示的数据条数
 
             function loadData(page) {
                 $.ajax({
                     type: "POST",
-                    url: "ajax/get_data.php",
-                    data: { page: page, perPage: perPage },
+                    url: "ajax/get_user_data.php",
+                    data: { page: page, perPage: perPage, user_id: <?php echo $user_id; ?> },
                     success: function (response) {
-                        var data = response;//JSON.parse(response);
+                        var data = response;
                         var tbody = $('#data-table tbody');
                         tbody.empty(); // 清空当前表格内容
+
+                        if (data.rows.length === 0) {
+                            // 显示空状态
+                            tbody.append('<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><p>您还没有创建任何短链接</p><p><a href="new.php" style="color: var(--primary-color);">立即创建第一个短链接</a></p></td></tr>');
+                            $('#pagination').empty();
+                            return;
+                        }
 
                         data.rows.forEach(function (row) {
                             var tr = $('<tr></tr>');
                             tr.append($('<td></td>').text(row.num));
                             tr.append($('<td class="url-cell"></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
                             tr.append($('<td></td>').text('<?php include './config.php'; echo $my_url; ?>' + row.short_url));
-                            tr.append($('<td></td>').text(row.ip));
                             tr.append($('<td></td>').text(row.add_date));
-                            tr.append($('<td></td>').text(row.uid));
+                            tr.append($('<td></td>').text(row.click_count || 0));
                             var deleteBtn = $('<button class="action-btn delete" title="删除"><i class="fas fa-trash"></i></button>').data('num', row.num).click(function () {
                                 deleteData($(this).data('num'));
                             });
@@ -340,8 +384,8 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                 if (confirm("确定要删除这条记录吗？")) {
                     $.ajax({
                         type: "POST",
-                        url: "ajax/delete_data.php",
-                        data: { num: num },
+                        url: "ajax/delete_user_data.php",
+                        data: { num: num, user_id: <?php echo $user_id; ?> },
                         success: function (response) {
                             if (response === 'success') {
                                 loadData(currentPage);

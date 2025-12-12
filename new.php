@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -299,14 +302,42 @@
             <i class="fas fa-magic"></i> 生成短链接
         </button>
         
-        <div class="auth-buttons">
-            <a href="./login.php" class="btn-login">
-                <i class="fas fa-sign-in-alt"></i> 登录
-            </a>
-            <a href="./register.php" class="btn-register">
-                <i class="fas fa-user-plus"></i> 注册
-            </a>
-        </div>
+        <?php
+        if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_SESSION['user_id'])) {
+            // 用户已登录
+            if (isset($_SESSION['user_group']) && $_SESSION['user_group'] === 'admin') {
+                // 管理员
+                echo '<div class="auth-buttons">';
+                echo '<a href="./admin.php" class="btn-login">';
+                echo '<i class="fas fa-tachometer-alt"></i> 管理面板';
+                echo '</a>';
+                echo '<a href="./logout.php" class="btn-register">';
+                echo '<i class="fas fa-sign-out-alt"></i> 退出登录';
+                echo '</a>';
+                echo '</div>';
+            } else {
+                // 普通用户
+                echo '<div class="auth-buttons">';
+                echo '<a href="./user_panel.php" class="btn-login">';
+                echo '<i class="fas fa-user"></i> 我的链接';
+                echo '</a>';
+                echo '<a href="./logout.php" class="btn-register">';
+                echo '<i class="fas fa-sign-out-alt"></i> 退出登录';
+                echo '</a>';
+                echo '</div>';
+            }
+        } else {
+            // 用户未登录
+            echo '<div class="auth-buttons">';
+            echo '<a href="./login.php" class="btn-login">';
+            echo '<i class="fas fa-sign-in-alt"></i> 登录';
+            echo '</a>';
+            echo '<a href="./register.php" class="btn-register">';
+            echo '<i class="fas fa-user-plus"></i> 注册';
+            echo '</a>';
+            echo '</div>';
+        }
+        ?>
         
         <div id='aaa' class="result-container">
             <div class="result-title">您的短链接已生成：</div>
