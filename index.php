@@ -15,8 +15,8 @@ if (isset($_GET['dest'])) {
 
     mysqli_query($conn, "set names utf8");
 
-    $sql = 'select num, url, short_url, add_date from go_to_url where short_url="' . $_GET['dest'] . '"';
 
+    $sql = 'select num, url, short_url, add_date, click_count from go_to_url where short_url="' . $_GET['dest'] . '"';
     mysqli_select_db($conn, $dbname);
     $retval = mysqli_query($conn, $sql);
 
@@ -26,13 +26,19 @@ if (isset($_GET['dest'])) {
 
     if ($retval->num_rows == 0) {
         include "new.php";
-    }
+    } else {
+        // 获取单条记录
+        $row = mysqli_fetch_array($retval, MYSQLI_ASSOC);
 
-    while ($row = mysqli_fetch_array($retval, MYSQLI_ASSOC)) {
+        // 只有当click_count字段存在时才增加点击次数
+        $update_click_sql = "UPDATE go_to_url SET click_count = COALESCE(click_count, 0) + 1 WHERE num = " . $row['num'];
+        mysqli_query($conn, $update_click_sql);
+        // 执行重定向
         header("Location: " . base64_decode($row['url']));
     }
 
     mysqli_close($conn);
+    exit; // 确保脚本终止
 } else {
     include "new.php";
 }

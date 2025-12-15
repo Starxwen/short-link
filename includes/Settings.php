@@ -3,6 +3,12 @@
  * 系统设置管理类
  * 用于从数据库中获取和管理系统设置
  */
+
+// 防止重复包含
+if (class_exists('Settings')) {
+    return;
+}
+
 class Settings {
     private static $settings = [];
     private static $loaded = false;

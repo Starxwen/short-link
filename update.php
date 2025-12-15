@@ -145,6 +145,31 @@ if (!in_array('uid', $existing_goto_columns)) {
     echo "<p style='color: green;'>✓ go_to_url表已包含uid字段</p>";
 }
 
+// 检查并添加click_count字段
+if (!in_array('click_count', $existing_goto_columns)) {
+    $alter_sql = "ALTER TABLE go_to_url ADD COLUMN `click_count` INT DEFAULT 0 AFTER `uid`";
+    if (mysqli_query($conn, $alter_sql)) {
+        echo "<p style='color: green;'>✓ 已添加click_count字段到go_to_url表</p>";
+    } else {
+        echo "<p style='color: red;'>✗ 添加click_count字段失败: " . mysqli_error($conn) . "</p>";
+    }
+} else {
+    echo "<p style='color: green;'>✓ go_to_url表已包含click_count字段</p>";
+}
+
+// 检查并添加uid索引
+$check_uid_index = mysqli_query($conn, "SHOW INDEX FROM `go_to_url` WHERE Key_name = 'uid'");
+if (mysqli_num_rows($check_uid_index) == 0) {
+    $add_uid_index = "ALTER TABLE `go_to_url` ADD KEY `uid` (`uid`)";
+    if (mysqli_query($conn, $add_uid_index)) {
+        echo "<p style='color: green;'>✓ 已添加uid索引到go_to_url表</p>";
+    } else {
+        echo "<p style='color: red;'>✗ 添加uid索引失败: " . mysqli_error($conn) . "</p>";
+    }
+} else {
+    echo "<p style='color: green;'>✓ go_to_url表已包含uid索引</p>";
+}
+
 echo "<h3>步骤3: 检查管理员账户</h3>";
 
 // 检查管理员账户是否存在
@@ -356,11 +381,13 @@ echo "<ul>";
 echo "<li>用户注册和登录</li>";
 echo "<li>用户管理自己的短链接</li>";
 echo "<li>管理员管理所有短链接</li>";
+echo "<li>短链接点击次数统计</li>";
 echo "<li>会话管理</li>";
 echo "<li>系统设置管理</li>";
 echo "<li>SMTP邮件配置</li>";
 echo "<li>注册设置管理</li>";
 echo "<li>邮箱验证功能</li>";
+echo "<li>4位随机验证码</li>";
 echo "</ul>";
 echo "<p><strong>重要提示：</strong></p>";
 echo "<ol>";

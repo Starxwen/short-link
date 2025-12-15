@@ -24,8 +24,16 @@ if (!$conn) {
     die(json_encode(['error' => '连接失败']));
 }
 
+// 检查click_count字段是否存在
+$check_click_count = mysqli_query($conn, "SHOW COLUMNS FROM `go_to_url` LIKE 'click_count'");
+$has_click_count = mysqli_num_rows($check_click_count) > 0;
+
 // 获取用户自己的短链接数据
-$sql = "SELECT num, url, short_url, add_date FROM go_to_url WHERE uid = $user_id ORDER BY add_date DESC LIMIT $offset, $perPage";
+if ($has_click_count) {
+    $sql = "SELECT num, url, short_url, add_date, click_count FROM go_to_url WHERE uid = $user_id ORDER BY add_date DESC LIMIT $offset, $perPage";
+} else {
+    $sql = "SELECT num, url, short_url, add_date, 0 as click_count FROM go_to_url WHERE uid = $user_id ORDER BY add_date DESC LIMIT $offset, $perPage";
+}
 $result = mysqli_query($conn, $sql);
 if (!$result) {
     die(json_encode(['error' => '无法读取数据']));

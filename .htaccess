@@ -1,5 +1,14 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
-    RewriteRule ^([^/]+)$ index.php?id=$1 [L,QSA]
+    
+    # 如果网站在根目录，使用下面的设置
+    # RewriteBase /
+    
+    # 如果网站在子目录中，请取消注释并修改下面的行
+    # RewriteBase /short-link/
+    
+    # 通用重写规则，适用于根目录和子目录
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([^/]+)$ index.php?dest=$1 [L,QSA]
 </IfModule>

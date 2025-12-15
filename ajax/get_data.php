@@ -17,7 +17,15 @@ if (!$conn) {
     die(json_encode(['error' => '连接失败']));
 }
 
-$sql = "SELECT num, url, short_url, ip, add_date, uid FROM go_to_url LIMIT $offset, $perPage";
+// 检查click_count字段是否存在
+$check_click_count = mysqli_query($conn, "SHOW COLUMNS FROM `go_to_url` LIKE 'click_count'");
+$has_click_count = mysqli_num_rows($check_click_count) > 0;
+
+if ($has_click_count) {
+    $sql = "SELECT num, url, short_url, ip, add_date, uid, click_count FROM go_to_url LIMIT $offset, $perPage";
+} else {
+    $sql = "SELECT num, url, short_url, ip, add_date, uid, 0 as click_count FROM go_to_url LIMIT $offset, $perPage";
+}
 $result = mysqli_query($conn, $sql);
 if (!$result) {
     die(json_encode(['error' => '无法读取数据']));

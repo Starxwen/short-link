@@ -4,10 +4,18 @@
  * 支持SMTP邮件发送
  */
 
-// 加载PHPMailer
-require_once __DIR__ . '/../vendor/autoload.php';
+// 防止重复包含
+if (class_exists('Mailer')) {
+    return;
+}
 
-class Mailer {
+// 加载PHPMailer
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    require_once __DIR__ . '/../vendor/autoload.php';
+}
+
+class Mailer
+{
     private $smtp_host;
     private $smtp_port;
     private $smtp_username;
@@ -15,23 +23,25 @@ class Mailer {
     private $smtp_encryption;
     private $from_address;
     private $from_name;
-    
-    public function __construct() {
+
+    public function __construct()
+    {
         // 从数据库加载SMTP设置
         $this->loadSettings();
     }
-    
+
     /**
      * 从数据库加载邮件设置
      */
-    private function loadSettings() {
+    private function loadSettings()
+    {
         global $dbhost, $dbuser, $dbpass, $dbname;
-        
+
         $conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
         if (!$conn) {
             return false;
         }
-        
+
         $result = mysqli_query($conn, "SELECT setting_key, setting_value FROM settings WHERE category = 'email'");
         while ($row = mysqli_fetch_assoc($result)) {
             switch ($row['setting_key']) {
@@ -58,10 +68,10 @@ class Mailer {
                     break;
             }
         }
-        
+
         mysqli_close($conn);
     }
-    
+
     /**
      * 发送邮件
      * @param string $to 收件人邮箱
@@ -70,35 +80,37 @@ class Mailer {
      * @param bool $is_html 是否为HTML格式
      * @return bool 发送结果
      */
-    public function send($to, $subject, $body, $is_html = false) {
+    public function send($to, $subject, $body, $is_html = false)
+    {
         // 检查SMTP设置是否完整
         if (empty($this->smtp_host) || empty($this->smtp_username) || empty($this->smtp_password)) {
             return false;
         }
-        
+
         // 优先使用阿里企业邮箱专用发送器
         if (file_exists(__DIR__ . '/AliyunMailer.php')) {
             include_once __DIR__ . '/AliyunMailer.php';
             $aliyun_mailer = new AliyunMailer();
             return $aliyun_mailer->send($to, $subject, $body, $is_html);
         }
-        
+
         // 使用PHPMailer发送邮件（如果可用）
         if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
             return $this->sendWithPHPMailer($to, $subject, $body, $is_html);
         }
-        
+
         // 使用原生PHP mail()函数作为备选方案
         return $this->sendWithMail($to, $subject, $body, $is_html);
     }
-    
+
     /**
      * 使用PHPMailer发送邮件
      */
-    private function sendWithPHPMailer($to, $subject, $body, $is_html) {
+    private function sendWithPHPMailer($to, $subject, $body, $is_html)
+    {
         try {
             $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-            
+
             // 服务器设置
             $mail->isSMTP();
             $mail->Host = $this->smtp_host;
@@ -107,43 +119,44 @@ class Mailer {
             $mail->Password = $this->smtp_password;
             $mail->SMTPSecure = $this->smtp_encryption === 'ssl' ? 'ssl' : 'tls';
             $mail->Port = intval($this->smtp_port);
-            
+
             // 发件人
             $mail->setFrom($this->from_address, $this->from_name);
             $mail->addAddress($to);
-            
+
             // 内容设置
             $mail->isHTML($is_html);
             $mail->Subject = $subject;
             $mail->Body = $body;
-            
+
             return $mail->send();
         } catch (Exception $e) {
             error_log("邮件发送失败: " . $e->getMessage());
             return false;
         }
     }
-    
+
     /**
      * 使用原生mail()函数发送邮件
      */
-    private function sendWithMail($to, $subject, $body, $is_html) {
+    private function sendWithMail($to, $subject, $body, $is_html)
+    {
         $headers = [];
         $headers[] = 'From: ' . $this->from_name . ' <' . $this->from_address . '>';
         $headers[] = 'Reply-To: ' . $this->from_address;
-        
+
         if ($is_html) {
             $headers[] = 'MIME-Version: 1.0';
             $headers[] = 'Content-Type: text/html; charset=UTF-8';
         } else {
             $headers[] = 'Content-Type: text/plain; charset=UTF-8';
         }
-        
+
         $headers = implode("\r\n", $headers);
-        
+
         return mail($to, $subject, $body, $headers);
     }
-    
+
     /**
      * 发送邮箱验证邮件
      * @param string $to 收件人邮箱
@@ -151,13 +164,14 @@ class Mailer {
      * @param string $verification_code 验证码
      * @return bool 发送结果
      */
-    public function sendVerificationEmail($to, $username, $verification_code) {
+    public function sendVerificationEmail($to, $username, $verification_code)
+    {
         // 获取系统设置
         $site_url = Settings::getSiteUrl();
         $site_name = Settings::getSiteName();
-        
+
         $subject = '邮箱验证 - ' . $site_name;
-        
+
         $body = "
         <html>
         <head>
@@ -196,19 +210,20 @@ class Mailer {
             </div>
         </body>
         </html>";
-        
+
         return $this->send($to, $subject, $body, true);
     }
-    
+
     /**
      * 测试邮件发送
      * @param string $to 测试邮箱
      * @return bool 测试结果
      */
-    public function testConnection($to) {
+    public function testConnection($to)
+    {
         // 获取系统设置
         $site_name = Settings::getSiteName();
-        
+
         $subject = 'SMTP测试邮件 - ' . $site_name;
         $body = "
         <html>
@@ -219,8 +234,20 @@ class Mailer {
             <p>发送时间: " . date('Y-m-d H:i:s') . "</p>
         </body>
         </html>";
-        
+
         return $this->send($to, $subject, $body, true);
+    }
+
+    /**
+     * 发送自定义邮件（用于验证码等）
+     * @param string $to 收件人邮箱
+     * @param string $subject 邮件主题
+     * @param string $message 邮件内容
+     * @return bool 发送结果
+     */
+    public function sendCustomEmail($to, $subject, $message)
+    {
+        return $this->send($to, $subject, $message, false);
     }
 }
 ?>

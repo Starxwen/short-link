@@ -14,10 +14,16 @@ $uid = isset($_POST['uid']) ? intval($_POST['uid']) : 0;
 $username = isset($_POST['username']) ? trim($_POST['username']) : '';
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $ugroup = isset($_POST['ugroup']) ? trim($_POST['ugroup']) : '';
+$email_verified = isset($_POST['email_verified']) ? intval($_POST['email_verified']) : 1;
 
 // 验证数据
 if (empty($uid) || empty($username) || empty($ugroup)) {
     die(json_encode(['error' => '用户ID、用户名和用户组是必填的']));
+}
+
+// 验证邮箱验证状态
+if ($email_verified !== 0 && $email_verified !== 1) {
+    die(json_encode(['error' => '无效的邮箱验证状态']));
 }
 
 // 防止修改管理员账户和自己
@@ -63,12 +69,12 @@ if (mysqli_num_rows($check_email_result) > 0) {
 }
 
 // 更新用户信息
-$update_sql = "UPDATE users SET username = ?, email = ?, ugroup = ? WHERE uid = ?";
+$update_sql = "UPDATE users SET username = ?, email = ?, ugroup = ?, email_verified = ? WHERE uid = ?";
 $update_stmt = mysqli_prepare($conn, $update_sql);
-mysqli_stmt_bind_param($update_stmt, "sssi", $username, $email, $ugroup, $uid);
+mysqli_stmt_bind_param($update_stmt, "sssii", $username, $email, $ugroup, $email_verified, $uid);
 
 if (mysqli_stmt_execute($update_stmt)) {
-    echo json_encode(['success' => '用户信息更新成功']);
+    echo json_encode(['success' => true]);
 } else {
     die(json_encode(['error' => '更新失败']));
 }

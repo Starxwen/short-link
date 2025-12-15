@@ -19,7 +19,7 @@ if (!$conn) {
 }
 
 // 获取用户列表
-$sql = "SELECT uid, username, email, ugroup FROM users ORDER BY uid DESC LIMIT $offset, $perPage";
+$sql = "SELECT uid, username, email, ugroup, COALESCE(email_verified, 1) as email_verified FROM users ORDER BY uid DESC LIMIT $offset, $perPage";
 $result = mysqli_query($conn, $sql);
 if (!$result) {
     die(json_encode(['error' => '无法读取数据']));

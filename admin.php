@@ -266,6 +266,14 @@ $site_url = Settings::getSiteUrl();
             background-color: #FF5722 !important;
         }
 
+        .layui-bg-green {
+            background-color: #5FB878 !important;
+        }
+
+        .layui-bg-orange {
+            background-color: #FFB800 !important;
+        }
+
         @media (max-width: 768px) {
             .admin-container {
                 padding: 15px;
@@ -325,10 +333,11 @@ $site_url = Settings::getSiteUrl();
                                     <thead>
                                         <tr>
                                             <th width="5%">编号</th>
-                                            <th width="35%">URL地址</th>
-                                            <th width="18%">短链接</th>
-                                            <th width="10%">用户IP</th>
-                                            <th width="12%">添加日期</th>
+                                            <th width="30%">URL地址</th>
+                                            <th width="15%">短链接</th>
+                                            <th width="8%">用户IP</th>
+                                            <th width="10%">添加日期</th>
+                                            <th width="8%">点击次数</th>
                                             <th width="10%">用户</th>
                                             <th width="5%">操作</th>
                                         </tr>
@@ -361,12 +370,13 @@ $site_url = Settings::getSiteUrl();
                                 <table class="data-table" id="users-table">
                                     <thead>
                                         <tr>
-                                            <th width="10%">用户ID</th>
-                                            <th width="20%">用户名</th>
-                                            <th width="25%">邮箱</th>
-                                            <th width="15%">用户组</th>
-                                            <th width="15%">链接数量</th>
-                                            <th width="15%">操作</th>
+                                            <th width="8%">用户ID</th>
+                                            <th width="18%">用户名</th>
+                                            <th width="22%">邮箱</th>
+                                            <th width="12%">用户组</th>
+                                            <th width="12%">邮箱验证</th>
+                                            <th width="12%">链接数量</th>
+                                            <th width="16%">操作</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -561,18 +571,31 @@ $site_url = Settings::getSiteUrl();
                     type: "POST",
                     url: "ajax/get_data.php",
                     data: { page: page, perPage: perPage },
+                    dataType: 'json',
                     success: function (response) {
-                        var data = response;
                         var tbody = $('#data-table tbody');
                         tbody.empty(); // 清空当前表格内容
 
-                        data.rows.forEach(function (row) {
+                        // 检查响应是否包含错误
+                        if (response.error) {
+                            tbody.append('<tr><td colspan="8" style="text-align: center;">' + response.error + '</td></tr>');
+                            return;
+                        }
+
+                        // 检查是否有数据
+                        if (!response.rows || response.rows.length === 0) {
+                            tbody.append('<tr><td colspan="8" style="text-align: center;">暂无数据</td></tr>');
+                            return;
+                        }
+
+                        response.rows.forEach(function (row) {
                             var tr = $('<tr></tr>');
                             tr.append($('<td></td>').text(row.num));
                             tr.append($('<td class="url-cell"></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
                             tr.append($('<td></td>').text('<?php echo $site_url; ?>' + row.short_url));
                             tr.append($('<td></td>').text(row.ip));
                             tr.append($('<td></td>').text(row.add_date));
+                            tr.append($('<td></td>').text(row.click_count || 0));
 
                             // 显示用户ID和用户名
                             var userCell = $('<td></td>');
@@ -606,7 +629,7 @@ $site_url = Settings::getSiteUrl();
                         // 更新分页按钮
                         var pagination = $('#pagination');
                         pagination.empty();
-                        for (var i = 1; i <= data.totalPages; i++) {
+                        for (var i = 1; i <= response.totalPages; i++) {
                             var btn = $('<button class="page-btn"></button>').text(i).click(function () {
                                 currentPage = parseInt($(this).text());
                                 loadData(currentPage);
@@ -650,12 +673,24 @@ $site_url = Settings::getSiteUrl();
                     type: "POST",
                     url: "ajax/get_users.php",
                     data: { page: page, perPage: usersPerPage },
+                    dataType: 'json',
                     success: function (response) {
-                        var data = response;
                         var tbody = $('#users-table tbody');
                         tbody.empty(); // 清空当前表格内容
 
-                        data.rows.forEach(function (row) {
+                        // 检查响应是否包含错误
+                        if (response.error) {
+                            tbody.append('<tr><td colspan="7" style="text-align: center;">' + response.error + '</td></tr>');
+                            return;
+                        }
+
+                        // 检查是否有数据
+                        if (!response.rows || response.rows.length === 0) {
+                            tbody.append('<tr><td colspan="7" style="text-align: center;">暂无数据</td></tr>');
+                            return;
+                        }
+
+                        response.rows.forEach(function (row) {
                             var tr = $('<tr></tr>');
                             tr.append($('<td></td>').text(row.uid));
                             tr.append($('<td></td>').text(row.username));
@@ -672,6 +707,17 @@ $site_url = Settings::getSiteUrl();
                             groupCell.append(groupBadge);
                             tr.append(groupCell);
 
+                            // 邮箱验证状态显示
+                            var emailVerifiedCell = $('<td></td>');
+                            var emailVerifiedBadge = $('<span class="layui-badge"></span>');
+                            if (row.email_verified == 1) {
+                                emailVerifiedBadge.addClass('layui-bg-green').text('已验证');
+                            } else {
+                                emailVerifiedBadge.addClass('layui-bg-orange').text('未验证');
+                            }
+                            emailVerifiedCell.append(emailVerifiedBadge);
+                            tr.append(emailVerifiedCell);
+
                             tr.append($('<td></td>').text(row.url_count));
 
                             // 操作按钮
@@ -683,8 +729,8 @@ $site_url = Settings::getSiteUrl();
 
                             // 防止编辑管理员账户和自己
                             if (row.uid !== 0 && row.uid !== <?php echo $_SESSION['user_id']; ?>) {
-                                var editBtn = $('<button class="action-btn edit" title="编辑用户"><i class="fas fa-edit"></i></button>').data('uid', row.uid).data('username', row.username).data('email', row.email).data('ugroup', row.ugroup).click(function () {
-                                    editUser($(this).data('uid'), $(this).data('username'), $(this).data('email'), $(this).data('ugroup'));
+                                var editBtn = $('<button class="action-btn edit" title="编辑用户"><i class="fas fa-edit"></i></button>').data('uid', row.uid).data('username', row.username).data('email', row.email).data('ugroup', row.ugroup).data('email_verified', row.email_verified).click(function () {
+                                    editUser($(this).data('uid'), $(this).data('username'), $(this).data('email'), $(this).data('ugroup'), $(this).data('email_verified'));
                                 });
                                 actionCell.append(editBtn);
                             }
@@ -704,7 +750,7 @@ $site_url = Settings::getSiteUrl();
                         // 更新分页按钮
                         var pagination = $('#users-pagination');
                         pagination.empty();
-                        for (var i = 1; i <= data.totalPages; i++) {
+                        for (var i = 1; i <= response.totalPages; i++) {
                             var btn = $('<button class="page-btn"></button>').text(i).click(function () {
                                 usersCurrentPage = parseInt($(this).text());
                                 loadUsers(usersCurrentPage);
@@ -737,15 +783,16 @@ $site_url = Settings::getSiteUrl();
                             '<thead>' +
                             '<tr>' +
                             '<th width="5%">编号</th>' +
-                            '<th width="40%">URL地址</th>' +
-                            '<th width="20%">短链接</th>' +
-                            '<th width="10%">用户IP</th>' +
-                            '<th width="15%">添加日期</th>' +
+                            '<th width="35%">URL地址</th>' +
+                            '<th width="18%">短链接</th>' +
+                            '<th width="8%">用户IP</th>' +
+                            '<th width="12%">添加日期</th>' +
+                            '<th width="8%">点击次数</th>' +
                             '<th width="5%">操作</th>' +
                             '</tr>' +
                             '</thead>' +
                             '<tbody>' +
-                            '<tr><td colspan="6" style="text-align: center;">加载中...</td></tr>' +
+                            '<tr><td colspan="7" style="text-align: center;">加载中...</td></tr>' +
                             '</tbody>' +
                             '</table>' +
                             '</div>' +
@@ -767,23 +814,30 @@ $site_url = Settings::getSiteUrl();
                     type: "POST",
                     url: "ajax/get_user_urls.php",
                     data: { user_id: uid, page: page, perPage: 10 },
+                    dataType: 'json',
                     success: function (response) {
-                        var data = response;
                         var tbody = $('#user-urls-table tbody');
                         tbody.empty(); // 清空当前表格内容
 
-                        if (data.error) {
-                            tbody.append('<tr><td colspan="6" style="text-align: center;">' + data.error + '</td></tr>');
+                        if (response.error) {
+                            tbody.append('<tr><td colspan="7" style="text-align: center;">' + response.error + '</td></tr>');
                             return;
                         }
 
-                        data.rows.forEach(function (row) {
+                        // 检查是否有数据
+                        if (!response.rows || response.rows.length === 0) {
+                            tbody.append('<tr><td colspan="7" style="text-align: center;">暂无数据</td></tr>');
+                            return;
+                        }
+
+                        response.rows.forEach(function (row) {
                             var tr = $('<tr></tr>');
                             tr.append($('<td></td>').text(row.num));
                             tr.append($('<td class="url-cell"></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
                             tr.append($('<td></td>').text('<?php echo $site_url; ?>' + row.short_url));
                             tr.append($('<td></td>').text(row.ip));
                             tr.append($('<td></td>').text(row.add_date));
+                            tr.append($('<td></td>').text(row.click_count || 0));
 
                             var deleteBtn = $('<button class="action-btn delete" title="删除"><i class="fas fa-trash"></i></button>').data('num', row.num).click(function () {
                                 deleteUserUrl($(this).data('num'));
@@ -795,7 +849,7 @@ $site_url = Settings::getSiteUrl();
                         // 更新分页按钮
                         var pagination = $('#user-urls-pagination');
                         pagination.empty();
-                        for (var i = 1; i <= data.totalPages; i++) {
+                        for (var i = 1; i <= response.totalPages; i++) {
                             var btn = $('<button class="page-btn"></button>').text(i).click(function () {
                                 loadUserUrls(uid, $(this).text());
                             });
@@ -806,7 +860,7 @@ $site_url = Settings::getSiteUrl();
                         }
                     },
                     error: function (error) {
-                        $('#user-urls-table tbody').html('<tr><td colspan="6" style="text-align: center;">加载失败: ' + error + '</td></tr>');
+                        $('#user-urls-table tbody').html('<tr><td colspan="7" style="text-align: center;">加载失败: ' + error + '</td></tr>');
                     }
                 });
             }
@@ -856,7 +910,7 @@ $site_url = Settings::getSiteUrl();
             }
 
             // 编辑用户信息
-            function editUser(uid, username, email, ugroup) {
+            function editUser(uid, username, email, ugroup, email_verified) {
                 layui.use(['layer', 'form'], function () {
                     var layer = layui.layer;
                     var form = layui.form;
@@ -892,6 +946,15 @@ $site_url = Settings::getSiteUrl();
                         '</div>' +
                         '</div>' +
                         '<div class="layui-form-item">' +
+                        '<label class="layui-form-label">邮箱验证状态</label>' +
+                        '<div class="layui-input-block">' +
+                        '<select name="email_verified" lay-verify="required">' +
+                        '<option value="1" ' + (email_verified == 1 ? 'selected' : '') + '>已验证</option>' +
+                        '<option value="0" ' + (email_verified == 0 ? 'selected' : '') + '>未验证</option>' +
+                        '</select>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="layui-form-item">' +
                         '<div class="layui-input-block">' +
                         '<button type="button" class="layui-btn" id="save-user-btn">保存修改</button>' +
                         '<button type="button" class="layui-btn layui-btn-primary" onclick="layer.closeAll()">取消</button>' +
@@ -916,7 +979,8 @@ $site_url = Settings::getSiteUrl();
                                     uid: $('#edit-user-form input[name="uid"]').val(),
                                     username: $('#edit-user-form input[name="username"]').val().trim(),
                                     email: $('#edit-user-form input[name="email"]').val().trim(),
-                                    ugroup: $('#edit-user-form select[name="ugroup"]').val()
+                                    ugroup: $('#edit-user-form select[name="ugroup"]').val(),
+                                    email_verified: $('#edit-user-form select[name="email_verified"]').val()
                                 };
 
                                 // 验证数据
@@ -961,12 +1025,15 @@ $site_url = Settings::getSiteUrl();
                     type: "POST",
                     url: "ajax/settings.php",
                     data: { action: 'get_settings' },
+                    dataType: 'json',
                     success: function (response) {
                         if (response.success) {
                             var settings = {};
-                            response.settings.forEach(function (setting) {
-                                settings[setting.setting_key] = setting.setting_value;
-                            });
+                            if (response.settings && Array.isArray(response.settings)) {
+                                response.settings.forEach(function (setting) {
+                                    settings[setting.setting_key] = setting.setting_value;
+                                });
+                            }
 
                             // 填充表单数据
                             layui.use('form', function () {

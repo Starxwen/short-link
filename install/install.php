@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         echo '数据库创建成功<br />';
     }
 
-    // 创建链接表
+    // 创建链接表（改进版）
     $sql = "CREATE TABLE IF NOT EXISTS `go_to_url`( " .
         "`num` INT NOT NULL AUTO_INCREMENT, " .
         "`url` TEXT NOT NULL, " .
@@ -79,8 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         "`ip` VARCHAR(50) NOT NULL, " .
         "`add_date` DATETIME NOT NULL, " .
         "`uid` INT DEFAULT 0, " .
+        "`click_count` INT DEFAULT 0, " .
         "PRIMARY KEY (`num`), " .
-        "UNIQUE KEY `short_url` (`short_url`)" .
+        "UNIQUE KEY `short_url` (`short_url`), " .
+        "KEY `uid` (`uid`)" .
         ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
     echo '正在创建链接表……<br />';
@@ -89,15 +91,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         die('链接表创建失败: ' . mysqli_error($conn));
     }
 
-    // 创建用户表（修正表名和字段）
+    // 检查并添加缺失的字段（用于升级现有安装）
+    $alter_sql = "ALTER TABLE `go_to_url` ADD COLUMN `click_count` INT DEFAULT 0";
+    mysqli_query($conn, $alter_sql); // 忽略错误，字段可能已存在
+
+    // 创建用户表（改进版）
     $sql2 = "CREATE TABLE IF NOT EXISTS `users`( " .
         "`uid` INT NOT NULL AUTO_INCREMENT, " .
         "`username` VARCHAR(64) NOT NULL, " .
         "`password` VARCHAR(128) NOT NULL, " .
-        "`email` VARCHAR(32) DEFAULT '', " .
+        "`email` VARCHAR(255) DEFAULT '', " .
         "`ugroup` VARCHAR(32) DEFAULT 'user', " .
+        "`email_verified` TINYINT(1) DEFAULT 1, " .
+        "`verification_code` VARCHAR(32) DEFAULT '', " .
+        "`verification_expires` DATETIME DEFAULT NULL, " .
         "PRIMARY KEY (`uid`), " .
-        "UNIQUE KEY `username` (`username`)" .
+        "UNIQUE KEY `username` (`username`), " .
+        "KEY `email` (`email`)" .
         ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
     echo '正在创建用户表……<br />';
@@ -106,8 +116,68 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         die('用户表创建失败: ' . mysqli_error($conn));
     }
 
+    // 检查并添加缺失的字段（用于升级现有安装）
+    $alter_sqls = [
+        "ALTER TABLE `users` MODIFY COLUMN `email` VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE `users` ADD COLUMN `email_verified` TINYINT(1) DEFAULT 1",
+        "ALTER TABLE `users` ADD COLUMN `verification_code` VARCHAR(32) DEFAULT ''",
+        "ALTER TABLE `users` ADD COLUMN `verification_expires` DATETIME DEFAULT NULL"
+    ];
+
+    foreach ($alter_sqls as $alter_sql) {
+        mysqli_query($conn, $alter_sql); // 忽略错误，字段可能已存在
+    }
+
+    // 创建系统设置表
+    $sql3 = "CREATE TABLE IF NOT EXISTS `settings`( " .
+        "`id` INT NOT NULL AUTO_INCREMENT, " .
+        "`setting_key` VARCHAR(100) NOT NULL, " .
+        "`setting_value` TEXT, " .
+        "`setting_name` VARCHAR(100), " .
+        "`category` VARCHAR(50) DEFAULT 'general', " .
+        "`updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " .
+        "PRIMARY KEY (`id`), " .
+        "UNIQUE KEY `setting_key` (`setting_key`)" .
+        ") ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+
+    echo '正在创建系统设置表……<br />';
+    $retval = mysqli_query($conn, $sql3);
+    if (!$retval) {
+        die('系统设置表创建失败: ' . mysqli_error($conn));
+    }
+
+    // 插入默认系统设置
+    $default_settings = [
+        ['site_name', '星跃短链接', '网站名称', 'general'],
+        ['site_url', $my_url, '网站URL', 'general'],
+        ['allow_registration', '1', '允许用户注册', 'registration'],
+        ['email_verification_required', '0', '需要邮箱验证', 'registration'],
+        ['smtp_host', '', 'SMTP服务器', 'email'],
+        ['smtp_port', '587', 'SMTP端口', 'email'],
+        ['smtp_username', '', 'SMTP用户名', 'email'],
+        ['smtp_password', '', 'SMTP密码', 'email'],
+        ['smtp_encryption', 'tls', '加密方式', 'email'],
+        ['email_from_address', '', '发件人邮箱', 'email'],
+        ['email_from_name', '', '发件人名称', 'email']
+    ];
+
+    echo '正在插入默认系统设置……<br />';
+    foreach ($default_settings as $setting) {
+        $insert_setting_sql = "INSERT INTO `settings` (`setting_key`, `setting_value`, `setting_name`, `category`) " .
+            "VALUES ('" . addslashes($setting[0]) . "', '" . addslashes($setting[1]) . "', '" .
+            addslashes($setting[2]) . "', '" . addslashes($setting[3]) . "') " .
+            "ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)";
+
+        if (!mysqli_query($conn, $insert_setting_sql)) {
+            echo '注意：设置项 ' . $setting[0] . ' 插入失败或已存在<br />';
+        }
+    }
+
     // 插入管理员用户
-    $insert_admin_sql = "INSERT INTO `users` (`username`, `password`, `email`, `ugroup`) VALUES ('$admin_username', '$admin_password', 'admin@localhost', 'admin')";
+    $insert_admin_sql = "INSERT INTO `users` (`username`, `password`, `email`, `ugroup`, `email_verified`) " .
+        "VALUES ('$admin_username', '$admin_password', 'admin@localhost', 'admin', 1) " .
+        "ON DUPLICATE KEY UPDATE `password` = '$admin_password'";
+
     if (!mysqli_query($conn, $insert_admin_sql)) {
         echo '注意：管理员用户创建失败或已存在<br />';
     }
@@ -140,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <body>
     <p>请通过安装向导页面进行安装。</p>
-    <a href="install.html">前往安装向导</a>
+    <a href="index.html">前往安装向导</a>
 </body>
 
 </html>

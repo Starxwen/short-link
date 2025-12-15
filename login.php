@@ -5,17 +5,20 @@ include './includes/Settings.php';
 
 // 获取系统设置
 $site_name = Settings::getSiteName();
-include './includes/Settings.php';
-
-// 获取系统设置
-$site_name = Settings::getSiteName();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $captcha = isset($_POST['captcha']) ? trim($_POST['captcha']) : '';
     $password_md5 = md5($password);
-
-    // 检查是否是管理员登录
+    
+    // 验证验证码
+    if (empty($captcha)) {
+        $error = '请输入验证码';
+    } elseif (!isset($_SESSION['captcha_code']) || strtolower($captcha) !== strtolower($_SESSION['captcha_code'])) {
+        $error = '验证码错误';
+    } else {
+        // 检查是否是管理员登录
     if ($username == $admin_username) {
         if ($password_md5 === $admin_password) {
             $_SESSION['logged_in'] = true;
@@ -72,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = '数据库连接失败';
         }
     }
+    
+    // 清除验证码session
+    unset($_SESSION['captcha_code']);
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -81,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - <?php echo htmlspecialchars($site_name); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
     <style>
         :root {
             --primary-color: #3498db;
@@ -278,9 +286,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             to { opacity: 1; transform: translateY(0); }
         }
         
+        .captcha-refresh {
+            font-size: 12px;
+            color: var(--text-light);
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        .captcha-refresh a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .captcha-refresh a:hover {
+            text-decoration: underline;
+        }
+        
         @media (max-width: 480px) {
             .login-container {
                 padding: 30px 20px;
+            }
+            
+            .form-group div[style*="display: flex"] {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            #captcha-image {
+                width: 100%;
+                height: auto;
             }
         }
     </style>
@@ -313,6 +347,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="password" id="password" name="password" class="form-control" placeholder="请输入密码" required>
             </div>
             
+            <div class="form-group">
+                <label for="captcha">验证码</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="captcha" name="captcha" class="form-control" placeholder="请输入验证码" maxlength="4" required style="flex: 1;">
+                    <img id="captcha-image" src="captcha.php" alt="验证码" style="height: 46px; cursor: pointer; border: 1px solid #ddd; border-radius: 4px;" title="点击刷新验证码">
+                </div>
+            </div>
+            
             <button type="submit" class="btn-login">登录系统</button>
         </form>
         
@@ -322,5 +364,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <a href="register.php"><i class="fas fa-user-plus"></i> 还没有账户？立即注册</a>
         </div>
     </div>
+    
+    <script>
+        $(document).ready(function() {
+            // 点击验证码图片刷新
+            $('#captcha-image').click(function() {
+                refreshCaptcha();
+            });
+            
+            // 刷新验证码函数
+            function refreshCaptcha() {
+                var timestamp = new Date().getTime();
+                $('#captcha-image').attr('src', 'captcha.php?t=' + timestamp);
+            }
+        });
+    </script>
 </body>
 </html>

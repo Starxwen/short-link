@@ -18,6 +18,24 @@ if (isset($_SESSION['user_group']) && $_SESSION['user_group'] === 'admin') {
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
+// 获取用户邮箱验证状态
+$conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
+$user_email_verified = true;
+$user_email = '';
+
+if ($conn) {
+    mysqli_query($conn, "set names utf8");
+    $user_sql = "SELECT email, email_verified FROM users WHERE uid = $user_id";
+    $user_result = mysqli_query($conn, $user_sql);
+    
+    if ($user_result && mysqli_num_rows($user_result) > 0) {
+        $user_data = mysqli_fetch_assoc($user_result);
+        $user_email = $user_data['email'];
+        $user_email_verified = isset($user_data['email_verified']) ? $user_data['email_verified'] : 1;
+    }
+    mysqli_close($conn);
+}
+
 // 获取系统设置
 $site_name = Settings::getSiteName();
 $site_url = Settings::getSiteUrl();
@@ -280,6 +298,69 @@ $site_url = Settings::getSiteUrl();
                 padding: 10px 8px;
             }
         }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(255, 193, 7, 0.2);
+        }
+        
+        .alert-warning i {
+            color: #856404;
+            font-size: 24px;
+            margin-top: 2px;
+        }
+        
+        .alert-warning div {
+            flex: 1;
+        }
+        
+        .alert-warning strong {
+            color: #856404;
+            font-size: 16px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .alert-warning p {
+            color: #856404;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .btn-resend-email {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: #212529;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .btn-resend-email:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(255, 193, 7, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .alert-warning {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .alert-warning i {
+                align-self: center;
+            }
+        }
     </style>
 </head>
 
@@ -293,6 +374,17 @@ $site_url = Settings::getSiteUrl();
     </div>
     
     <div class="user-container">
+        <?php if (!$user_email_verified && !empty($user_email)): ?>
+        <div class="alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>邮箱未验证</strong>
+                <p>您的邮箱地址尚未验证，验证后可以享受更多功能。请检查您的邮箱并点击验证链接，或重新发送验证邮件。</p>
+                <button class="btn-resend-email" onclick="resendVerificationEmail()">重新发送验证邮件</button>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <div class="page-title">
             <i class="fas fa-tachometer-alt"></i> 我的短链接
         </div>
@@ -340,19 +432,27 @@ $site_url = Settings::getSiteUrl();
                     type: "POST",
                     url: "ajax/get_user_data.php",
                     data: { page: page, perPage: perPage, user_id: <?php echo $user_id; ?> },
+                    dataType: 'json',
                     success: function (response) {
-                        var data = response;
                         var tbody = $('#data-table tbody');
                         tbody.empty(); // 清空当前表格内容
 
-                        if (data.rows.length === 0) {
+                        // 检查响应是否包含错误
+                        if (response.error) {
+                            tbody.append('<tr><td colspan="6" style="text-align: center;">' + response.error + '</td></tr>');
+                            $('#pagination').empty();
+                            return;
+                        }
+
+                        // 检查是否有数据
+                        if (!response.rows || response.rows.length === 0) {
                             // 显示空状态
                             tbody.append('<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><p>您还没有创建任何短链接</p><p><a href="new.php" style="color: var(--primary-color);">立即创建第一个短链接</a></p></td></tr>');
                             $('#pagination').empty();
                             return;
                         }
 
-                        data.rows.forEach(function (row) {
+                        response.rows.forEach(function (row) {
                             var tr = $('<tr></tr>');
                             tr.append($('<td></td>').text(row.num));
                             tr.append($('<td class="url-cell"></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
@@ -407,6 +507,26 @@ $site_url = Settings::getSiteUrl();
 
             loadData(currentPage); // 加载第一页数据
         });
+        
+        // 重新发送验证邮件
+        function resendVerificationEmail() {
+            $.ajax({
+                type: 'POST',
+                url: 'ajax/resend_verification_email.php',
+                data: { user_id: <?php echo $user_id; ?> },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                    } else {
+                        alert(response.error || '发送失败，请稍后重试');
+                    }
+                },
+                error: function() {
+                    alert('发送失败，请稍后重试');
+                }
+            });
+        }
     </script>
 </body>
 </html>
