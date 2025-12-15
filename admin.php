@@ -298,6 +298,7 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             <ul class="layui-tab-title">
                 <li class="layui-this"><i class="fas fa-link"></i> 链接数据管理</li>
                 <li><i class="fas fa-users"></i> 用户管理</li>
+                <li><i class="fas fa-cog"></i> 系统设置</li>
             </ul>
             <div class="layui-tab-content">
                 <!-- 链接数据管理标签页 -->
@@ -372,6 +373,137 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                         </div>
                     </div>
                 </div>
+                
+                <!-- 系统设置标签页 -->
+                <div class="layui-tab-item">
+                    <div class="page-title">
+                        <i class="fas fa-cog"></i> 系统设置
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-cogs"></i> 基本设置</h2>
+                        </div>
+                        <div class="card-body">
+                            <form class="layui-form" id="general-settings-form" lay-filter="generalSettings">
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">网站名称</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="site_name" required lay-verify="required" placeholder="请输入网站名称" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">网站URL</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="site_url" required lay-verify="required|url" placeholder="请输入网站URL，必须以/结尾" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <div class="layui-input-block">
+                                        <button type="submit" class="layui-btn" lay-submit lay-filter="saveGeneralSettings">保存设置</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-envelope"></i> 邮件设置</h2>
+                        </div>
+                        <div class="card-body">
+                            <form class="layui-form" id="email-settings-form" lay-filter="emailSettings">
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">SMTP服务器</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="smtp_host" placeholder="如：smtp.gmail.com" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">SMTP端口</label>
+                                    <div class="layui-input-block">
+                                        <input type="number" name="smtp_port" placeholder="如：587" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">SMTP用户名</label>
+                                    <div class="layui-input-block">
+                                        <input type="email" name="smtp_username" placeholder="邮箱地址" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">SMTP密码</label>
+                                    <div class="layui-input-block">
+                                        <input type="password" name="smtp_password" placeholder="密码或授权码" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">加密方式</label>
+                                    <div class="layui-input-block">
+                                        <select name="smtp_encryption">
+                                            <option value="tls">TLS</option>
+                                            <option value="ssl">SSL</option>
+                                            <option value="none">无加密</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">发件人邮箱</label>
+                                    <div class="layui-input-block">
+                                        <input type="email" name="email_from_address" placeholder="系统发送邮件的邮箱地址" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">发件人名称</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="email_from_name" placeholder="系统发送邮件的名称" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">测试邮箱</label>
+                                    <div class="layui-input-block">
+                                        <div class="layui-input-inline" style="width: 300px;">
+                                            <input type="email" name="test_email" placeholder="输入测试邮箱地址" class="layui-input">
+                                        </div>
+                                        <button type="button" class="layui-btn layui-btn-normal" id="test-email-btn">发送测试邮件</button>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <div class="layui-input-block">
+                                        <button type="submit" class="layui-btn" lay-submit lay-filter="saveEmailSettings">保存设置</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-user-plus"></i> 注册设置</h2>
+                        </div>
+                        <div class="card-body">
+                            <form class="layui-form" id="registration-settings-form" lay-filter="registrationSettings">
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">允许用户注册</label>
+                                    <div class="layui-input-block">
+                                        <input type="checkbox" name="allow_registration" lay-skin="switch" lay-text="是|否">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">需要邮箱验证</label>
+                                    <div class="layui-input-block">
+                                        <input type="checkbox" name="email_verification_required" lay-skin="switch" lay-text="是|否">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <div class="layui-input-block">
+                                        <button type="submit" class="layui-btn" lay-submit lay-filter="saveRegistrationSettings">保存设置</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -395,6 +527,9 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                     } else if(data.index === 1) {
                         // 用户管理标签页
                         loadUsers(usersCurrentPage);
+                    } else if(data.index === 2) {
+                        // 系统设置标签页
+                        loadSettings();
                     }
                 });
             });
@@ -777,6 +912,163 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                     });
                 });
             }
+
+            // 加载系统设置
+            function loadSettings() {
+                $.ajax({
+                    type: "POST",
+                    url: "ajax/settings.php",
+                    data: { action: 'get_settings' },
+                    success: function (response) {
+                        if (response.success) {
+                            var settings = {};
+                            response.settings.forEach(function(setting) {
+                                settings[setting.setting_key] = setting.setting_value;
+                            });
+                            
+                            // 填充表单数据
+                            layui.use('form', function(){
+                                var form = layui.form;
+                                
+                                // 基本设置
+                                $('#general-settings-form input[name="site_name"]').val(settings.site_name || '');
+                                $('#general-settings-form input[name="site_url"]').val(settings.site_url || '');
+                                
+                                // 邮件设置
+                                $('#email-settings-form input[name="smtp_host"]').val(settings.smtp_host || '');
+                                $('#email-settings-form input[name="smtp_port"]').val(settings.smtp_port || '587');
+                                $('#email-settings-form input[name="smtp_username"]').val(settings.smtp_username || '');
+                                $('#email-settings-form input[name="smtp_password"]').val(settings.smtp_password || '');
+                                $('#email-settings-form select[name="smtp_encryption"]').val(settings.smtp_encryption || 'tls');
+                                $('#email-settings-form input[name="email_from_address"]').val(settings.email_from_address || '');
+                                $('#email-settings-form input[name="email_from_name"]').val(settings.email_from_name || '');
+                                
+                                // 注册设置
+                                $('#registration-settings-form input[name="allow_registration"]').prop('checked', settings.allow_registration === '1');
+                                $('#registration-settings-form input[name="email_verification_required"]').prop('checked', settings.email_verification_required === '1');
+                                
+                                form.render();
+                            });
+                        } else {
+                            layui.use('layer', function(){
+                                var layer = layui.layer;
+                                layer.msg('加载设置失败: ' + (response.error || '未知错误'), {icon: 2});
+                            });
+                        }
+                    },
+                    error: function (error) {
+                        layui.use('layer', function(){
+                            var layer = layui.layer;
+                            layer.msg('加载设置失败: ' + error, {icon: 2});
+                        });
+                    }
+                });
+            }
+
+            // 保存设置
+            function saveSettings(category, formSelector) {
+                var formData = {};
+                $(formSelector + ' input, ' + formSelector + ' select').each(function() {
+                    var name = $(this).attr('name');
+                    var value = $(this).val();
+                    
+                    if ($(this).attr('type') === 'checkbox') {
+                        value = $(this).prop('checked') ? '1' : '0';
+                    }
+                    
+                    if (name) {
+                        formData[name] = value;
+                    }
+                });
+                
+                $.ajax({
+                    type: "POST",
+                    url: "ajax/settings.php",
+                    data: { action: 'save_settings', settings: formData },
+                    success: function (response) {
+                        layui.use('layer', function(){
+                            var layer = layui.layer;
+                            if (response.success) {
+                                layer.msg('设置保存成功', {icon: 1});
+                            } else {
+                                layer.msg('保存失败: ' + (response.error || '未知错误'), {icon: 2});
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        layui.use('layer', function(){
+                            var layer = layui.layer;
+                            layer.msg('保存失败: ' + error, {icon: 2});
+                        });
+                    }
+                });
+            }
+
+            // 测试邮件发送
+            $('#test-email-btn').click(function() {
+                var testEmail = $('#email-settings-form input[name="test_email"]').val();
+                
+                if (!testEmail) {
+                    layui.use('layer', function(){
+                        var layer = layui.layer;
+                        layer.msg('请输入测试邮箱地址', {icon: 2});
+                    });
+                    return;
+                }
+                
+                if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(testEmail)) {
+                    layui.use('layer', function(){
+                        var layer = layui.layer;
+                        layer.msg('邮箱格式不正确', {icon: 2});
+                    });
+                    return;
+                }
+                
+                $.ajax({
+                    type: "POST",
+                    url: "ajax/settings.php",
+                    data: { action: 'test_email', test_email: testEmail },
+                    success: function (response) {
+                        layui.use('layer', function(){
+                            var layer = layui.layer;
+                            if (response.success) {
+                                layer.msg(response.message, {icon: 1});
+                            } else {
+                                layer.msg(response.error || '测试失败', {icon: 2});
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        layui.use('layer', function(){
+                            var layer = layui.layer;
+                            layer.msg('测试失败: ' + error, {icon: 2});
+                        });
+                    }
+                });
+            });
+
+            // 初始化表单提交事件
+            layui.use('form', function(){
+                var form = layui.form;
+                
+                // 基本设置表单提交
+                form.on('submit(saveGeneralSettings)', function(data){
+                    saveSettings('general', '#general-settings-form');
+                    return false;
+                });
+                
+                // 邮件设置表单提交
+                form.on('submit(saveEmailSettings)', function(data){
+                    saveSettings('email', '#email-settings-form');
+                    return false;
+                });
+                
+                // 注册设置表单提交
+                form.on('submit(saveRegistrationSettings)', function(data){
+                    saveSettings('registration', '#registration-settings-form');
+                    return false;
+                });
+            });
 
             // 全局变量，用于存储当前查看的用户ID
             var currentUserId = 0;

@@ -17,28 +17,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $confirm_password = $_POST['confirm_password'];
     $email = trim($_POST['email']);
     
-    // 验证输入
-    if (empty($username) || empty($password) || empty($confirm_password)) {
-        $error = '请填写所有必填字段';
-    } elseif (strlen($username) < 3 || strlen($username) > 20) {
-        $error = '用户名长度必须在3-20个字符之间';
-    } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
-        $error = '用户名只能包含字母、数字和下划线';
-    } elseif (strlen($password) < 6) {
-        $error = '密码长度至少6个字符';
-    } elseif ($password !== $confirm_password) {
-        $error = '两次输入的密码不一致';
-    } elseif (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = '邮箱格式不正确';
+    // 连接数据库
+    $conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
+    if (!$conn) {
+        $error = '数据库连接失败';
     } else {
-        // 连接数据库
-        $conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
-        if (!$conn) {
-            $error = '数据库连接失败';
+        mysqli_query($conn, "set names utf8");
+        
+        // 检查是否允许注册
+        $allow_registration = 1;
+        $email_verification_required = 0;
+        
+        $settings_result = mysqli_query($conn, "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('allow_registration', 'email_verification_required')");
+        if ($settings_result) {
+            while ($row = mysqli_fetch_assoc($settings_result)) {
+                if ($row['setting_key'] === 'allow_registration') {
+                    $allow_registration = $row['setting_value'];
+                } elseif ($row['setting_key'] === 'email_verification_required') {
+                    $email_verification_required = $row['setting_value'];
+                }
+            }
+        }
+        
+        if ($allow_registration != '1') {
+            $error = '当前系统已关闭用户注册功能';
         } else {
-            mysqli_query($conn, "set names utf8");
-            
-            // 检查用户名是否已存在
+            // 验证输入
+            if (empty($username) || empty($password) || empty($confirm_password)) {
+                $error = '请填写所有必填字段';
+            } elseif (strlen($username) < 3 || strlen($username) > 20) {
+                $error = '用户名长度必须在3-20个字符之间';
+            } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
+                $error = '用户名只能包含字母、数字和下划线';
+            } elseif (strlen($password) < 6) {
+                $error = '密码长度至少6个字符';
+            } elseif ($password !== $confirm_password) {
+                $error = '两次输入的密码不一致';
+            } elseif ($email_verification_required == '1' && empty($email)) {
+                $error = '当前系统要求必须填写邮箱地址';
+            } elseif (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = '邮箱格式不正确';
+            } else {
+                // 检查用户名是否已存在
             $username = mysqli_real_escape_string($conn, $username);
             $check_sql = "SELECT uid FROM users WHERE username = '$username'";
             $check_result = mysqli_query($conn, $check_sql);
@@ -50,23 +70,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $password_md5 = md5($password);
                 $email = mysqli_real_escape_string($conn, $email);
                 
-                // 检查表结构，确定是否有email字段
+                // 检查表结构，确定是否有email相关字段
                 $columns_check = mysqli_query($conn, "SHOW COLUMNS FROM users");
                 $existing_columns = [];
                 while ($row = mysqli_fetch_assoc($columns_check)) {
                     $existing_columns[] = $row['Field'];
                 }
                 
-                if (in_array('email', $existing_columns)) {
+                // 生成验证码和过期时间
+                $verification_code = '';
+                $verification_expires = '';
+                $email_verified = 1; // 默认为已验证
+                
+                if ($email_verification_required == '1' && !empty($email)) {
+                    $verification_code = md5(uniqid(rand(), true));
+                    $verification_expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                    $email_verified = 0;
+                }
+                
+                // 构建插入语句
+                if (in_array('email', $existing_columns) && in_array('email_verified', $existing_columns)) {
+                    if ($email_verification_required == '1' && !empty($email)) {
+                        $insert_sql = "INSERT INTO users (username, password, email, ugroup, email_verified, verification_code, verification_expires) VALUES ('$username', '$password_md5', '$email', 'user', $email_verified, '$verification_code', '$verification_expires')";
+                    } else {
+                        $insert_sql = "INSERT INTO users (username, password, email, ugroup, email_verified) VALUES ('$username', '$password_md5', '$email', 'user', $email_verified)";
+                    }
+                } elseif (in_array('email', $existing_columns)) {
                     $insert_sql = "INSERT INTO users (username, password, email, ugroup) VALUES ('$username', '$password_md5', '$email', 'user')";
                 } else {
                     $insert_sql = "INSERT INTO users (username, password, ugroup) VALUES ('$username', '$password_md5', 'user')";
                 }
                 
                 if (mysqli_query($conn, $insert_sql)) {
-                    $success = '注册成功！请登录您的账户';
+                    if ($email_verification_required == '1' && !empty($email) && !empty($verification_code)) {
+                        // 发送验证邮件
+                        if (file_exists('./includes/Mailer.php')) {
+                            include './includes/Mailer.php';
+                            $mailer = new Mailer();
+                            
+                            if ($mailer->sendVerificationEmail($email, $username, $verification_code)) {
+                                $success = '注册成功！验证邮件已发送到您的邮箱，请查收并点击链接激活账户。';
+                            } else {
+                                $error = '注册成功，但验证邮件发送失败，请联系管理员。';
+                            }
+                        } else {
+                            $error = '注册成功，但邮件发送功能不可用，请联系管理员。';
+                        }
+                    } else {
+                        $success = '注册成功！请登录您的账户';
+                    }
                 } else {
                     $error = '注册失败：' . mysqli_error($conn);
+                }
                 }
             }
             
@@ -324,8 +379,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             
             <div class="form-group">
-                <label for="email">邮箱</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="选填，用于找回密码" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                <label for="email">邮箱 <?php if ($email_verification_required == '1') echo '*'; ?></label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="<?php echo $email_verification_required == '1' ? '必填，用于账户验证' : '选填，用于找回密码'; ?>" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" <?php echo $email_verification_required == '1' ? 'required' : ''; ?>>
             </div>
             
             <div class="form-group">

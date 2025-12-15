@@ -16,8 +16,8 @@ $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $ugroup = isset($_POST['ugroup']) ? trim($_POST['ugroup']) : '';
 
 // 验证数据
-if (empty($uid) || empty($username) || empty($email) || empty($ugroup)) {
-    die(json_encode(['error' => '所有字段都是必填的']));
+if (empty($uid) || empty($username) || empty($ugroup)) {
+    die(json_encode(['error' => '用户ID、用户名和用户组是必填的']));
 }
 
 // 防止修改管理员账户和自己
