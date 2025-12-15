@@ -292,9 +292,9 @@ location ~ ^/([a-zA-Z0-9]+)$ {
 
 ## 📞 联系我们
 
-- **项目地址**：https://gitee.com/jsy-1/short-url
+- **项目地址**：https://gitee.com/dcstar001/short-link/
 - **演示网站**：https://u.xwyue.com
-- **问题反馈**：[Issues](https://gitee.com/jsy-1/short-url/issues)
+- **问题反馈**：[Issues](https://gitee.com/dcstar001/short-url/issues)
 - **技术支持**：[星跃云](https://www.xwyue.com)
 
 ---
