@@ -219,6 +219,38 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             border-color: var(--primary-color);
         }
         
+        .action-btn.view {
+            color: var(--primary-color);
+            margin-right: 5px;
+        }
+        
+        .action-btn.view:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .text-muted {
+            color: var(--text-light);
+            font-size: 0.85em;
+        }
+        
+        .user-urls-container {
+            padding: 15px;
+        }
+        
+        .layui-badge {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        
+        .layui-bg-blue {
+            background-color: #1E9FFF !important;
+        }
+        
+        .layui-bg-red {
+            background-color: #FF5722 !important;
+        }
+        
         @media (max-width: 768px) {
             .admin-container {
                 padding: 15px;
@@ -252,36 +284,84 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
     </div>
     
     <div class="admin-container">
-        <div class="page-title">
-            <i class="fas fa-tachometer-alt"></i> 链接数据管理
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h2><i class="fas fa-table"></i> 链接列表</h2>
-            </div>
-            <div class="card-body">
-                <div class="table-container">
-                    <table class="data-table" id="data-table">
-                        <thead>
-                            <tr>
-                                <th width="5%">编号</th>
-                                <th width="40%">URL地址</th>
-                                <th width="20%">短链接</th>
-                                <th width="10%">用户IP</th>
-                                <th width="15%">添加日期</th>
-                                <th width="5%">用户ID</th>
-                                <th width="5%">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- 数据行将通过JavaScript动态插入 -->
-                        </tbody>
-                    </table>
+        <!-- 标签页导航 -->
+        <div class="layui-tab layui-tab-brief" lay-filter="adminTab">
+            <ul class="layui-tab-title">
+                <li class="layui-this"><i class="fas fa-link"></i> 链接数据管理</li>
+                <li><i class="fas fa-users"></i> 用户管理</li>
+            </ul>
+            <div class="layui-tab-content">
+                <!-- 链接数据管理标签页 -->
+                <div class="layui-tab-item layui-show">
+                    <div class="page-title">
+                        <i class="fas fa-tachometer-alt"></i> 链接数据管理
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-table"></i> 链接列表</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="data-table" id="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="5%">编号</th>
+                                            <th width="35%">URL地址</th>
+                                            <th width="18%">短链接</th>
+                                            <th width="10%">用户IP</th>
+                                            <th width="12%">添加日期</th>
+                                            <th width="10%">用户</th>
+                                            <th width="5%">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- 数据行将通过JavaScript动态插入 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="pagination" id="pagination">
+                                <!-- 分页按钮将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="pagination" id="pagination">
-                    <!-- 分页按钮将通过JavaScript动态生成 -->
+                <!-- 用户管理标签页 -->
+                <div class="layui-tab-item">
+                    <div class="page-title">
+                        <i class="fas fa-users"></i> 用户管理
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-table"></i> 用户列表</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="data-table" id="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="10%">用户ID</th>
+                                            <th width="20%">用户名</th>
+                                            <th width="25%">邮箱</th>
+                                            <th width="15%">用户组</th>
+                                            <th width="15%">链接数量</th>
+                                            <th width="15%">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- 数据行将通过JavaScript动态插入 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="pagination" id="users-pagination">
+                                <!-- 分页按钮将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -291,14 +371,33 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
         $(document).ready(function () {
             var currentPage = 1;
             var perPage = 12; // 每页显示的数据条数
+            var usersCurrentPage = 1;
+            var usersPerPage = 10; // 用户列表每页显示的数据条数
 
+            // 初始化LayUI标签页
+            layui.use('element', function(){
+                var element = layui.element;
+                
+                // 监听标签切换事件
+                element.on('tab(adminTab)', function(data){
+                    if(data.index === 0) {
+                        // 链接数据管理标签页
+                        loadData(currentPage);
+                    } else if(data.index === 1) {
+                        // 用户管理标签页
+                        loadUsers(usersCurrentPage);
+                    }
+                });
+            });
+
+            // 加载链接数据
             function loadData(page) {
                 $.ajax({
                     type: "POST",
                     url: "ajax/get_data.php",
                     data: { page: page, perPage: perPage },
                     success: function (response) {
-                        var data = response;//JSON.parse(response);
+                        var data = response;
                         var tbody = $('#data-table tbody');
                         tbody.empty(); // 清空当前表格内容
 
@@ -309,7 +408,29 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                             tr.append($('<td></td>').text('<?php include './config.php'; echo $my_url; ?>' + row.short_url));
                             tr.append($('<td></td>').text(row.ip));
                             tr.append($('<td></td>').text(row.add_date));
-                            tr.append($('<td></td>').text(row.uid));
+                            
+                            // 显示用户ID和用户名
+                            var userCell = $('<td></td>');
+                            if (row.uid == 0) {
+                                userCell.text('游客');
+                            } else {
+                                userCell.html('ID: ' + row.uid + '<br><small class="text-muted">加载中...</small>');
+                                // 异步获取用户名
+                                $.ajax({
+                                    type: "POST",
+                                    url: "ajax/get_username.php",
+                                    data: { uid: row.uid },
+                                    success: function (response) {
+                                        if (response.username) {
+                                            userCell.html('ID: ' + row.uid + '<br><small class="text-muted">' + response.username + '</small>');
+                                        } else {
+                                            userCell.html('ID: ' + row.uid + '<br><small class="text-muted">未知用户</small>');
+                                        }
+                                    }
+                                });
+                            }
+                            tr.append(userCell);
+                            
                             var deleteBtn = $('<button class="action-btn delete" title="删除"><i class="fas fa-trash"></i></button>').data('num', row.num).click(function () {
                                 deleteData($(this).data('num'));
                             });
@@ -322,7 +443,8 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                         pagination.empty();
                         for (var i = 1; i <= data.totalPages; i++) {
                             var btn = $('<button class="page-btn"></button>').text(i).click(function () {
-                                loadData($(this).text());
+                                currentPage = parseInt($(this).text());
+                                loadData(currentPage);
                             });
                             if (i === page) {
                                 btn.addClass('active');
@@ -336,6 +458,7 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                 });
             }
 
+            // 删除链接数据
             function deleteData(num) {
                 if (confirm("确定要删除这条记录吗？")) {
                     $.ajax({
@@ -356,7 +479,214 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                 }
             }
 
-            loadData(currentPage); // 加载第一页数据
+            // 加载用户列表
+            function loadUsers(page) {
+                $.ajax({
+                    type: "POST",
+                    url: "ajax/get_users.php",
+                    data: { page: page, perPage: usersPerPage },
+                    success: function (response) {
+                        var data = response;
+                        var tbody = $('#users-table tbody');
+                        tbody.empty(); // 清空当前表格内容
+
+                        data.rows.forEach(function (row) {
+                            var tr = $('<tr></tr>');
+                            tr.append($('<td></td>').text(row.uid));
+                            tr.append($('<td></td>').text(row.username));
+                            tr.append($('<td></td>').text(row.email));
+                            
+                            // 用户组显示
+                            var groupCell = $('<td></td>');
+                            var groupBadge = $('<span class="layui-badge"></span>');
+                            if (row.ugroup === 'admin') {
+                                groupBadge.addClass('layui-bg-red').text('管理员');
+                            } else {
+                                groupBadge.addClass('layui-bg-blue').text('普通用户');
+                            }
+                            groupCell.append(groupBadge);
+                            tr.append(groupCell);
+                            
+                            tr.append($('<td></td>').text(row.url_count));
+                            
+                            // 操作按钮
+                            var actionCell = $('<td></td>');
+                            var viewBtn = $('<button class="action-btn view" title="查看用户链接"><i class="fas fa-eye"></i></button>').data('uid', row.uid).data('username', row.username).click(function () {
+                                viewUserUrls($(this).data('uid'), $(this).data('username'));
+                            });
+                            actionCell.append(viewBtn);
+                            
+                            // 防止删除管理员账户和自己
+                            if (row.uid !== 0 && row.uid !== <?php echo $_SESSION['user_id']; ?>) {
+                                var deleteBtn = $('<button class="action-btn delete" title="删除用户"><i class="fas fa-trash"></i></button>').data('uid', row.uid).data('username', row.username).click(function () {
+                                    deleteUser($(this).data('uid'), $(this).data('username'));
+                                });
+                                actionCell.append(deleteBtn);
+                            }
+                            
+                            tr.append(actionCell);
+                            tbody.append(tr);
+                        });
+
+                        // 更新分页按钮
+                        var pagination = $('#users-pagination');
+                        pagination.empty();
+                        for (var i = 1; i <= data.totalPages; i++) {
+                            var btn = $('<button class="page-btn"></button>').text(i).click(function () {
+                                usersCurrentPage = parseInt($(this).text());
+                                loadUsers(usersCurrentPage);
+                            });
+                            if (i === page) {
+                                btn.addClass('active');
+                            }
+                            pagination.append(btn);
+                        }
+                    },
+                    error: function (error) {
+                        alert("加载用户数据失败: " + error);
+                    }
+                });
+            }
+
+            // 查看用户链接
+            function viewUserUrls(uid, username) {
+                // 创建模态框显示用户链接
+                layui.use('layer', function(){
+                    var layer = layui.layer;
+                    
+                    layer.open({
+                        type: 1,
+                        title: '用户 ' + username + ' 的链接列表',
+                        area: ['90%', '80%'],
+                        content: '<div class="user-urls-container">' +
+                                '<div class="table-container">' +
+                                '<table class="data-table" id="user-urls-table">' +
+                                '<thead>' +
+                                '<tr>' +
+                                '<th width="5%">编号</th>' +
+                                '<th width="40%">URL地址</th>' +
+                                '<th width="20%">短链接</th>' +
+                                '<th width="10%">用户IP</th>' +
+                                '<th width="15%">添加日期</th>' +
+                                '<th width="5%">操作</th>' +
+                                '</tr>' +
+                                '</thead>' +
+                                '<tbody>' +
+                                '<tr><td colspan="6" style="text-align: center;">加载中...</td></tr>' +
+                                '</tbody>' +
+                                '</table>' +
+                                '</div>' +
+                                '<div class="pagination" id="user-urls-pagination"></div>' +
+                                '</div>',
+                        success: function(layero, index){
+                            // 设置当前查看的用户ID
+                            currentUserId = uid;
+                            // 加载用户链接数据
+                            loadUserUrls(uid, 1);
+                        }
+                    });
+                });
+            }
+
+            // 加载用户链接数据
+            function loadUserUrls(uid, page) {
+                $.ajax({
+                    type: "POST",
+                    url: "ajax/get_user_urls.php",
+                    data: { user_id: uid, page: page, perPage: 10 },
+                    success: function (response) {
+                        var data = response;
+                        var tbody = $('#user-urls-table tbody');
+                        tbody.empty(); // 清空当前表格内容
+
+                        if (data.error) {
+                            tbody.append('<tr><td colspan="6" style="text-align: center;">' + data.error + '</td></tr>');
+                            return;
+                        }
+
+                        data.rows.forEach(function (row) {
+                            var tr = $('<tr></tr>');
+                            tr.append($('<td></td>').text(row.num));
+                            tr.append($('<td class="url-cell"></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
+                            tr.append($('<td></td>').text('<?php include './config.php'; echo $my_url; ?>' + row.short_url));
+                            tr.append($('<td></td>').text(row.ip));
+                            tr.append($('<td></td>').text(row.add_date));
+                            
+                            var deleteBtn = $('<button class="action-btn delete" title="删除"><i class="fas fa-trash"></i></button>').data('num', row.num).click(function () {
+                                deleteUserUrl($(this).data('num'));
+                            });
+                            tr.append($('<td></td>').append(deleteBtn));
+                            tbody.append(tr);
+                        });
+
+                        // 更新分页按钮
+                        var pagination = $('#user-urls-pagination');
+                        pagination.empty();
+                        for (var i = 1; i <= data.totalPages; i++) {
+                            var btn = $('<button class="page-btn"></button>').text(i).click(function () {
+                                loadUserUrls(uid, $(this).text());
+                            });
+                            if (i === page) {
+                                btn.addClass('active');
+                            }
+                            pagination.append(btn);
+                        }
+                    },
+                    error: function (error) {
+                        $('#user-urls-table tbody').html('<tr><td colspan="6" style="text-align: center;">加载失败: ' + error + '</td></tr>');
+                    }
+                });
+            }
+
+            // 删除用户链接
+            function deleteUserUrl(num) {
+                if (confirm("确定要删除这条记录吗？")) {
+                    $.ajax({
+                        type: "POST",
+                        url: "ajax/delete_data.php",
+                        data: { num: num },
+                        success: function (response) {
+                            if (response === 'success') {
+                                // 重新加载当前页面的用户链接
+                                var activePage = $('#user-urls-pagination .page-btn.active').text();
+                                loadUserUrls(currentUserId, activePage);
+                            } else {
+                                alert("删除失败: " + response);
+                            }
+                        },
+                        error: function (error) {
+                            alert("删除数据失败: " + error);
+                        }
+                    });
+                }
+            }
+
+            // 删除用户
+            function deleteUser(uid, username) {
+                if (confirm("确定要删除用户 " + username + " 吗？\n\n注意：这将同时删除该用户的所有短链接数据！")) {
+                    $.ajax({
+                        type: "POST",
+                        url: "ajax/delete_user.php",
+                        data: { uid: uid },
+                        success: function (response) {
+                            if (response === 'success') {
+                                loadUsers(usersCurrentPage);
+                            } else {
+                                alert("删除失败: " + response);
+                            }
+                        },
+                        error: function (error) {
+                            alert("删除用户失败: " + error);
+                        }
+                    });
+                }
+            }
+
+            // 全局变量，用于存储当前查看的用户ID
+            var currentUserId = 0;
+
+            // 加载第一页数据
+            loadData(currentPage);
         });
     </script>
 </body>
