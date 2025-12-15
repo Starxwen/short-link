@@ -228,6 +228,15 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
             background-color: rgba(52, 152, 219, 0.1);
         }
         
+        .action-btn.edit {
+            color: #f39c12;
+            margin-right: 5px;
+        }
+        
+        .action-btn.edit:hover {
+            background-color: rgba(243, 156, 18, 0.1);
+        }
+        
         .text-muted {
             color: var(--text-light);
             font-size: 0.85em;
@@ -516,6 +525,14 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                             });
                             actionCell.append(viewBtn);
                             
+                            // 防止编辑管理员账户和自己
+                            if (row.uid !== 0 && row.uid !== <?php echo $_SESSION['user_id']; ?>) {
+                                var editBtn = $('<button class="action-btn edit" title="编辑用户"><i class="fas fa-edit"></i></button>').data('uid', row.uid).data('username', row.username).data('email', row.email).data('ugroup', row.ugroup).click(function () {
+                                    editUser($(this).data('uid'), $(this).data('username'), $(this).data('email'), $(this).data('ugroup'));
+                                });
+                                actionCell.append(editBtn);
+                            }
+                            
                             // 防止删除管理员账户和自己
                             if (row.uid !== 0 && row.uid !== <?php echo $_SESSION['user_id']; ?>) {
                                 var deleteBtn = $('<button class="action-btn delete" title="删除用户"><i class="fas fa-trash"></i></button>').data('uid', row.uid).data('username', row.username).click(function () {
@@ -680,6 +697,85 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
                         }
                     });
                 }
+            }
+
+            // 编辑用户信息
+            function editUser(uid, username, email, ugroup) {
+                layui.use('layer', function(){
+                    var layer = layui.layer;
+                    
+                    layer.open({
+                        type: 1,
+                        title: '编辑用户信息',
+                        area: ['500px', '400px'],
+                        content: '<div style="padding: 20px;">' +
+                                '<form id="edit-user-form" lay-filter="editUserForm">' +
+                                '<div class="layui-form-item">' +
+                                '<label class="layui-form-label">用户ID</label>' +
+                                '<div class="layui-input-block">' +
+                                '<input type="text" name="uid" value="' + uid + '" readonly class="layui-input">' +
+                                '</div>' +
+                                '</div>' +
+                                '<div class="layui-form-item">' +
+                                '<label class="layui-form-label">用户名</label>' +
+                                '<div class="layui-input-block">' +
+                                '<input type="text" name="username" value="' + username + '" required lay-verify="required" class="layui-input">' +
+                                '</div>' +
+                                '</div>' +
+                                '<div class="layui-form-item">' +
+                                '<label class="layui-form-label">邮箱</label>' +
+                                '<div class="layui-input-block">' +
+                                '<input type="email" name="email" value="' + email + '" required lay-verify="required|email" class="layui-input">' +
+                                '</div>' +
+                                '</div>' +
+                                '<div class="layui-form-item">' +
+                                '<label class="layui-form-label">用户组</label>' +
+                                '<div class="layui-input-block">' +
+                                '<select name="ugroup" lay-verify="required">' +
+                                '<option value="user" ' + (ugroup === 'user' ? 'selected' : '') + '>普通用户</option>' +
+                                '<option value="admin" ' + (ugroup === 'admin' ? 'selected' : '') + '>管理员</option>' +
+                                '</select>' +
+                                '</div>' +
+                                '</div>' +
+                                '<div class="layui-form-item">' +
+                                '<div class="layui-input-block">' +
+                                '<button type="submit" class="layui-btn" lay-submit lay-filter="editUserSubmit">保存修改</button>' +
+                                '<button type="button" class="layui-btn layui-btn-primary" onclick="layer.closeAll()">取消</button>' +
+                                '</div>' +
+                                '</div>' +
+                                '</form>' +
+                                '</div>',
+                        success: function(layero, index){
+                            // 渲染表单
+                            layui.use('form', function(){
+                                var form = layui.form;
+                                form.render();
+                                
+                                // 监听提交
+                                form.on('submit(editUserSubmit)', function(data){
+                                    $.ajax({
+                                        type: "POST",
+                                        url: "ajax/update_user.php",
+                                        data: data.field,
+                                        success: function (response) {
+                                            if (response.success) {
+                                                layer.msg('用户信息更新成功', {icon: 1});
+                                                layer.closeAll();
+                                                loadUsers(usersCurrentPage);
+                                            } else {
+                                                layer.msg('更新失败: ' + (response.error || '未知错误'), {icon: 2});
+                                            }
+                                        },
+                                        error: function (error) {
+                                            layer.msg('更新失败: ' + error, {icon: 2});
+                                        }
+                                    });
+                                    return false; // 阻止表单跳转
+                                });
+                            });
+                        }
+                    });
+                });
             }
 
             // 全局变量，用于存储当前查看的用户ID
