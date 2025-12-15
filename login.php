@@ -1,6 +1,14 @@
 <?php
 session_start();
 include './config.php';
+include './includes/Settings.php';
+
+// 获取系统设置
+$site_name = Settings::getSiteName();
+include './includes/Settings.php';
+
+// 获取系统设置
+$site_name = Settings::getSiteName();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
@@ -71,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 星跃短链接</title>
+    <title>登录 - <?php echo htmlspecialchars($site_name); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -286,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <div class="logo-text">
                 <h2>用户登录</h2>
-                <p>星跃短链接系统</p>
+                <p><?php echo htmlspecialchars($site_name); ?>系统</p>
             </div>
         </div>
         

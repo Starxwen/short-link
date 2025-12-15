@@ -152,9 +152,11 @@ class Mailer {
      * @return bool 发送结果
      */
     public function sendVerificationEmail($to, $username, $verification_code) {
-        global $my_url;
+        // 获取系统设置
+        $site_url = Settings::getSiteUrl();
+        $site_name = Settings::getSiteName();
         
-        $subject = '邮箱验证 - 星跃短链接';
+        $subject = '邮箱验证 - ' . $site_name;
         
         $body = "
         <html>
@@ -172,24 +174,24 @@ class Mailer {
         <body>
             <div class='container'>
                 <div class='header'>
-                    <h1>星跃短链接</h1>
+                    <h1>{$site_name}</h1>
                     <p>邮箱验证</p>
                 </div>
                 <div class='content'>
                     <p>您好，{$username}！</p>
-                    <p>感谢您注册星跃短链接服务。请点击下面的按钮验证您的邮箱地址：</p>
+                    <p>感谢您注册{$site_name}服务。请点击下面的按钮验证您的邮箱地址：</p>
                     <p style='text-align: center;'>
-                        <a href='{$my_url}verify_email.php?code={$verification_code}&email=" . urlencode($to) . "' class='button'>验证邮箱</a>
+                        <a href='{$site_url}verify_email.php?code={$verification_code}&email=" . urlencode($to) . "' class='button'>验证邮箱</a>
                     </p>
                     <p>如果按钮无法点击，请复制以下链接到浏览器地址栏：</p>
                     <p style='word-break: break-all; background: #eee; padding: 10px; border-radius: 4px;'>
-                        {$my_url}verify_email.php?code={$verification_code}&email=" . urlencode($to) . "
+                        {$site_url}verify_email.php?code={$verification_code}&email=" . urlencode($to) . "
                     </p>
                     <p>此验证链接将在24小时后过期。</p>
                 </div>
                 <div class='footer'>
                     <p>此邮件由系统自动发送，请勿回复。</p>
-                    <p>如果您没有注册星跃短链接账户，请忽略此邮件。</p>
+                    <p>如果您没有注册{$site_name}账户，请忽略此邮件。</p>
                 </div>
             </div>
         </body>
@@ -204,7 +206,10 @@ class Mailer {
      * @return bool 测试结果
      */
     public function testConnection($to) {
-        $subject = 'SMTP测试邮件 - 星跃短链接';
+        // 获取系统设置
+        $site_name = Settings::getSiteName();
+        
+        $subject = 'SMTP测试邮件 - ' . $site_name;
         $body = "
         <html>
         <body>

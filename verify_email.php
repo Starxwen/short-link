@@ -1,6 +1,10 @@
 <?php
 session_start();
 include './config.php';
+include './includes/Settings.php';
+
+// 获取系统设置
+$site_name = Settings::getSiteName();
 
 // 获取验证码和邮箱
 $code = isset($_GET['code']) ? trim($_GET['code']) : '';
@@ -56,7 +60,7 @@ if (!empty($code) && !empty($email)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>邮箱验证 - 星跃短链接</title>
+    <title>邮箱验证 - <?php echo htmlspecialchars($site_name); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -232,7 +236,7 @@ if (!empty($code) && !empty($email)) {
             </div>
             <div class="logo-text">
                 <h2>邮箱验证</h2>
-                <p>星跃短链接</p>
+                <p><?php echo htmlspecialchars($site_name); ?></p>
             </div>
         </div>
         

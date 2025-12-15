@@ -1,5 +1,10 @@
 <?php
 session_start();
+include './config.php';
+include './includes/Settings.php';
+
+// 获取系统设置
+$site_name = Settings::getSiteName();
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -7,7 +12,7 @@ session_start();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>星跃短链接生成器</title>
+    <title><?php echo htmlspecialchars($site_name); ?></title>
     <script src="js/jquery.js"></script>
     <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.min.css" media="all">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -289,7 +294,7 @@ session_start();
                 <i class="fas fa-link"></i>
             </div>
             <div class="logo-text">
-                <h1>星跃短链接生成器</h1>
+                <h1><?php echo htmlspecialchars($site_name); ?></h1>
                 <p>快速生成简洁易记的短链接</p>
             </div>
         </div>

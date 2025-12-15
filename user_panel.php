@@ -1,6 +1,7 @@
 <?php
 session_start();
 include './config.php';
+include './includes/Settings.php';
 
 // 检查用户是否已登录
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || !isset($_SESSION['user_id'])) {
@@ -16,13 +17,17 @@ if (isset($_SESSION['user_group']) && $_SESSION['user_group'] === 'admin') {
 
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
+
+// 获取系统设置
+$site_name = Settings::getSiteName();
+$site_url = Settings::getSiteUrl();
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户面板 - 星跃短链接</title>
+    <title>用户面板 - <?php echo htmlspecialchars($site_name); ?></title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.min.css" media="all">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
@@ -280,7 +285,7 @@ $username = $_SESSION['username'];
 
 <body>
     <div class="user-header">
-        <h1><i class="fas fa-link"></i> 星跃短链接用户面板</h1>
+        <h1><i class="fas fa-link"></i> <?php echo htmlspecialchars($site_name); ?>用户面板</h1>
         <div class="user-info">
             <span>欢迎，<?php echo htmlspecialchars($username); ?></span>
             <button class="logout-btn" onclick="location.href='logout.php'"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
@@ -351,7 +356,7 @@ $username = $_SESSION['username'];
                             var tr = $('<tr></tr>');
                             tr.append($('<td></td>').text(row.num));
                             tr.append($('<td class="url-cell"></td>').text(decodeURIComponent(escape(window.atob(row.url)))));
-                            tr.append($('<td></td>').text('<?php include './config.php'; echo $my_url; ?>' + row.short_url));
+                            tr.append($('<td></td>').text('<?php echo $site_url; ?>' + row.short_url));
                             tr.append($('<td></td>').text(row.add_date));
                             tr.append($('<td></td>').text(row.click_count || 0));
                             var deleteBtn = $('<button class="action-btn delete" title="删除"><i class="fas fa-trash"></i></button>').data('num', row.num).click(function () {

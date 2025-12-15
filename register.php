@@ -1,6 +1,14 @@
 <?php
 session_start();
 include './config.php';
+include './includes/Settings.php';
+
+// 获取系统设置
+$site_name = Settings::getSiteName();
+include './includes/Settings.php';
+
+// 获取系统设置
+$site_name = Settings::getSiteName();
 
 // 如果用户已登录，重定向到用户面板
 if (isset($_SESSION['user_id']) && $_SESSION['user_id'] > 0) {
@@ -135,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>注册 - 星跃短链接</title>
+    <title>注册 - <?php echo htmlspecialchars($site_name); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -359,7 +367,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <div class="logo-text">
                 <h2>用户注册</h2>
-                <p>创建您的星跃短链接账户</p>
+                <p>创建您的<?php echo htmlspecialchars($site_name); ?>账户</p>
             </div>
         </div>
         
