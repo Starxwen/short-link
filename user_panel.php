@@ -520,10 +520,15 @@ $site_url = Settings::getSiteUrl();
                         alert(response.message);
                     } else {
                         alert(response.error || '发送失败，请稍后重试');
+                        // 在控制台输出调试信息
+                        if (response.debug) {
+                            console.log('邮件设置调试信息:', response.debug);
+                        }
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     alert('发送失败，请稍后重试');
+                    console.log('AJAX错误:', status, error);
                 }
             });
         }

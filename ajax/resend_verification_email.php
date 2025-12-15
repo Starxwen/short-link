@@ -77,11 +77,68 @@ if (file_exists('../includes/Mailer.php')) {
     include '../includes/Mailer.php';
     $mailer = new Mailer();
     
+    // 直接尝试发送邮件，如果失败则提供更详细的错误信息
     if ($mailer->sendVerificationEmail($user_data['email'], $user_data['username'], $verification_code)) {
         $_SESSION['verification_email_sent'] = time();
         echo json_encode(['success' => true, 'message' => '验证邮件已重新发送，请查收您的邮箱']);
     } else {
-        echo json_encode(['success' => false, 'error' => '邮件发送失败，请稍后重试']);
+        // 检查SMTP设置是否完整
+        global $dbhost, $dbuser, $dbpass, $dbname;
+        $smtp_conn = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
+        $smtp_settings_ok = true;
+        $missing_settings = [];
+        $debug_info = [];
+        
+        if ($smtp_conn) {
+            mysqli_query($smtp_conn, "set names utf8");
+            // 先检查表结构
+            $table_check = mysqli_query($smtp_conn, "DESCRIBE settings");
+            $has_category = false;
+            while ($row = mysqli_fetch_assoc($table_check)) {
+                if ($row['Field'] === 'category') {
+                    $has_category = true;
+                    break;
+                }
+            }
+            
+            // 根据表结构选择查询方式
+            if ($has_category) {
+                $smtp_result = mysqli_query($smtp_conn, "SELECT setting_key, setting_value FROM settings WHERE category = 'email'");
+            } else {
+                // 如果没有category字段，查询所有邮件相关的设置
+                $email_keys = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_encryption', 'email_from_address', 'email_from_name'];
+                $smtp_result = mysqli_query($smtp_conn, "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('" . implode("','", $email_keys) . "')");
+            }
+            
+            while ($row = mysqli_fetch_assoc($smtp_result)) {
+                $debug_info[$row['setting_key']] = $row['setting_value'];
+                
+                if ($row['setting_key'] === 'smtp_host' && empty($row['setting_value'])) {
+                    $smtp_settings_ok = false;
+                    $missing_settings[] = 'SMTP服务器';
+                }
+                if ($row['setting_key'] === 'smtp_username' && empty($row['setting_value'])) {
+                    $smtp_settings_ok = false;
+                    $missing_settings[] = 'SMTP用户名';
+                }
+                if ($row['setting_key'] === 'smtp_password' && empty($row['setting_value'])) {
+                    $smtp_settings_ok = false;
+                    $missing_settings[] = 'SMTP密码';
+                }
+                if ($row['setting_key'] === 'email_from_address' && empty($row['setting_value'])) {
+                    $smtp_settings_ok = false;
+                    $missing_settings[] = '发件人邮箱';
+                }
+            }
+            mysqli_close($smtp_conn);
+        }
+        
+        if (!$smtp_settings_ok) {
+            echo json_encode(['success' => false, 'error' => '邮件设置不完整，请配置以下项：' . implode(', ', $missing_settings), 'debug' => $debug_info]);
+        } else {
+            // 如果设置完整但发送失败，可能是SMTP服务器连接问题
+            echo json_encode(['success' => false, 'error' => '邮件发送失败，请检查SMTP服务器连接、端口、加密方式等设置', 'debug' => $debug_info]);
+        }
     }
 } else {
     echo json_encode(['success' => false, 'error' => '邮件发送功能不可用']);

@@ -42,7 +42,25 @@ class Mailer
             return false;
         }
 
-        $result = mysqli_query($conn, "SELECT setting_key, setting_value FROM settings WHERE category = 'email'");
+        // 先检查表结构
+        $table_check = mysqli_query($conn, "DESCRIBE settings");
+        $has_category = false;
+        while ($row = mysqli_fetch_assoc($table_check)) {
+            if ($row['Field'] === 'category') {
+                $has_category = true;
+                break;
+            }
+        }
+        
+        // 根据表结构选择查询方式
+        if ($has_category) {
+            $result = mysqli_query($conn, "SELECT setting_key, setting_value FROM settings WHERE category = 'email'");
+        } else {
+            // 如果没有category字段，查询所有邮件相关的设置
+            $email_keys = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_encryption', 'email_from_address', 'email_from_name'];
+            $result = mysqli_query($conn, "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('" . implode("','", $email_keys) . "')");
+        }
+        
         while ($row = mysqli_fetch_assoc($result)) {
             switch ($row['setting_key']) {
                 case 'smtp_host':

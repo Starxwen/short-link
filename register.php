@@ -32,15 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // 检查是否允许注册
         $allow_registration = 1;
-        $email_verification_required = 0;
+        // 要求邮箱验证（注册后需要验证邮箱）
+        $email_verification_required = 1;
         
-        $settings_result = mysqli_query($conn, "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('allow_registration', 'email_verification_required')");
+        $settings_result = mysqli_query($conn, "SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('allow_registration')");
         if ($settings_result) {
             while ($row = mysqli_fetch_assoc($settings_result)) {
                 if ($row['setting_key'] === 'allow_registration') {
                     $allow_registration = $row['setting_value'];
-                } elseif ($row['setting_key'] === 'email_verification_required') {
-                    $email_verification_required = $row['setting_value'];
                 }
             }
         }
@@ -49,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = '当前系统已关闭用户注册功能';
         } else {
             // 验证输入
-            if (empty($username) || empty($password) || empty($confirm_password)) {
+            if (empty($username) || empty($password) || empty($confirm_password) || empty($email)) {
                 $error = '请填写所有必填字段';
             } elseif (strlen($username) < 3 || strlen($username) > 20) {
                 $error = '用户名长度必须在3-20个字符之间';
@@ -59,25 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $error = '密码长度至少6个字符';
             } elseif ($password !== $confirm_password) {
                 $error = '两次输入的密码不一致';
-            } elseif ($email_verification_required == '1' && empty($email)) {
-                $error = '当前系统要求必须填写邮箱地址';
-            } elseif (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $error = '邮箱格式不正确';
-            } elseif ($email_verification_required == '1' && !empty($email)) {
-                // 验证邮箱验证码
-                if (empty($email_code)) {
-                    $error = '请输入邮箱验证码';
-                } elseif (!isset($_SESSION['email_verification_code']) ||
-                         !isset($_SESSION['email_verification_code_expires']) ||
-                         !isset($_SESSION['email_for_verification'])) {
-                    $error = '验证码已过期，请重新获取';
-                } elseif ($_SESSION['email_for_verification'] !== $email) {
-                    $error = '验证码与邮箱不匹配，请重新获取';
-                } elseif (time() > strtotime($_SESSION['email_verification_code_expires'])) {
-                    $error = '验证码已过期，请重新获取';
-                } elseif ($_SESSION['email_verification_code'] !== $email_code) {
-                    $error = '验证码错误';
-                }
             }
             
             // 验证图形验证码
@@ -94,6 +76,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (mysqli_num_rows($check_result) > 0) {
                 $error = '用户名已存在';
             } else {
+                // 检查邮箱是否已被使用
+                $email = mysqli_real_escape_string($conn, $email);
+                $check_email_sql = "SELECT uid FROM users WHERE email = '$email'";
+                $check_email_result = mysqli_query($conn, $check_email_sql);
+                
+                if (mysqli_num_rows($check_email_result) > 0) {
+                    $error = '该邮箱已被注册';
+                } else {
                 // 创建新用户
                 $password_md5 = md5($password);
                 $email = mysqli_real_escape_string($conn, $email);
@@ -108,12 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // 生成验证码和过期时间
                 $verification_code = '';
                 $verification_expires = '';
-                $email_verified = 1; // 默认为已验证
+                $email_verified = 0; // 默认为未验证
                 
                 if ($email_verification_required == '1' && !empty($email)) {
                     $verification_code = md5(uniqid(rand(), true));
                     $verification_expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
-                    $email_verified = 0;
                 }
                 
                 // 构建插入语句
@@ -149,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     }
                 } else {
                     $error = '注册失败：' . mysqli_error($conn);
+                }
                 }
                 }
             }
@@ -442,21 +432,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             
             <div class="form-group">
-                <label for="email">邮箱 <?php if ($email_verification_required == '1') echo '*'; ?></label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="email" id="email" name="email" class="form-control" placeholder="<?php echo $email_verification_required == '1' ? '必填，用于账户验证' : '选填，用于找回密码'; ?>" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" <?php echo $email_verification_required == '1' ? 'required' : ''; ?>>
-                    <?php if ($email_verification_required == '1'): ?>
-                    <button type="button" id="send-code-btn" class="btn-send-code">获取验证码</button>
-                    <?php endif; ?>
-                </div>
+                <label for="email">邮箱 *</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="必填，用于找回密码和账户验证" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
             </div>
-            
-            <?php if ($email_verification_required == '1'): ?>
-            <div class="form-group">
-                <label for="email_code">邮箱验证码 *</label>
-                <input type="text" id="email_code" name="email_code" class="form-control" placeholder="请输入6位验证码" maxlength="6" required>
-            </div>
-            <?php endif; ?>
             
             <div class="form-group">
                 <label for="password">密码 *</label>
@@ -492,67 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
     
-    <?php if ($email_verification_required == '1'): ?>
     <script>
-        $(document).ready(function() {
-            var countdown = 0;
-            var countdownInterval;
-            
-            $('#send-code-btn').click(function() {
-                var email = $('#email').val().trim();
-                
-                if (!email) {
-                    alert('请先输入邮箱地址');
-                    $('#email').focus();
-                    return;
-                }
-                
-                if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
-                    alert('邮箱格式不正确');
-                    $('#email').focus();
-                    return;
-                }
-                
-                var $btn = $(this);
-                $btn.prop('disabled', true);
-                
-                $.ajax({
-                    type: 'POST',
-                    url: 'ajax/send_email_code.php',
-                    data: { email: email },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.success) {
-                            alert(response.message);
-                            startCountdown();
-                        } else {
-                            alert(response.error);
-                            $btn.prop('disabled', false);
-                        }
-                    },
-                    error: function() {
-                        alert('发送失败，请稍后重试');
-                        $btn.prop('disabled', false);
-                    }
-                });
-            });
-            
-            function startCountdown() {
-                countdown = 60;
-                $('#send-code-btn').text(countdown + '秒后重试');
-                
-                countdownInterval = setInterval(function() {
-                    countdown--;
-                    if (countdown <= 0) {
-                        clearInterval(countdownInterval);
-                        $('#send-code-btn').prop('disabled', false).text('获取验证码');
-                    } else {
-                        $('#send-code-btn').text(countdown + '秒后重试');
-                    }
-                }, 1000);
-            }
-        });
-        
         // 点击验证码图片刷新
         $('#captcha-image').click(function() {
             refreshCaptcha();
@@ -564,6 +482,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $('#captcha-image').attr('src', 'captcha.php?t=' + timestamp);
         }
     </script>
-    <?php endif; ?>
 </body>
 </html>
