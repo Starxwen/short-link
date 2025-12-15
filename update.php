@@ -28,14 +28,14 @@ echo "<h3>步骤1: 检查并更新用户表结构</h3>";
 $users_table_check = mysqli_query($conn, "SHOW TABLES LIKE 'users'");
 if (mysqli_num_rows($users_table_check) > 0) {
     echo "<p style='color: green;'>✓ users表已存在</p>";
-    
+
     // 检查users表结构
     $users_columns = mysqli_query($conn, "SHOW COLUMNS FROM users");
     $existing_columns = [];
     while ($row = mysqli_fetch_assoc($users_columns)) {
         $existing_columns[] = $row['Field'];
     }
-    
+
     // 检查并添加缺失的字段
     if (!in_array('email', $existing_columns) && !in_array('mail', $existing_columns)) {
         $alter_sql = "ALTER TABLE users ADD COLUMN `email` VARCHAR(100) DEFAULT '' AFTER `password`";
@@ -61,14 +61,14 @@ if (mysqli_num_rows($users_table_check) > 0) {
             echo "<p style='color: orange;'>⚠ 删除mail字段失败，但系统仍可正常工作</p>";
         }
     }
-    
+
     // 添加其他基础字段
     $basic_fields = [
         'created_at' => "DATETIME DEFAULT CURRENT_TIMESTAMP AFTER `ugroup`",
         'last_login' => "DATETIME NULL AFTER `created_at`",
         'status' => "TINYINT DEFAULT 1 COMMENT '1:正常 0:禁用' AFTER `last_login`"
     ];
-    
+
     foreach ($basic_fields as $field => $definition) {
         if (!in_array($field, $existing_columns)) {
             $alter_sql = "ALTER TABLE users ADD COLUMN `$field` $definition";
@@ -79,14 +79,14 @@ if (mysqli_num_rows($users_table_check) > 0) {
             }
         }
     }
-    
+
     // 添加邮箱验证相关字段
     $email_fields = [
         'email_verified' => "TINYINT DEFAULT 0 COMMENT '0:未验证 1:已验证'",
         'verification_code' => "VARCHAR(64) DEFAULT '' COMMENT '邮箱验证码'",
         'verification_expires' => "DATETIME NULL COMMENT '验证码过期时间'"
     ];
-    
+
     foreach ($email_fields as $field => $definition) {
         if (!in_array($field, $existing_columns)) {
             $alter_sql = "ALTER TABLE users ADD COLUMN `$field` $definition";
@@ -101,7 +101,7 @@ if (mysqli_num_rows($users_table_check) > 0) {
     }
 } else {
     echo "<p style='color: orange;'>⚠ users表不存在，将创建新表</p>";
-    
+
     // 创建users表（包含所有字段）
     $create_users_sql = "CREATE TABLE `users` (
         `uid` INT NOT NULL AUTO_INCREMENT,
@@ -118,7 +118,7 @@ if (mysqli_num_rows($users_table_check) > 0) {
         PRIMARY KEY (`uid`),
         UNIQUE KEY `username` (`username`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-    
+
     if (mysqli_query($conn, $create_users_sql)) {
         echo "<p style='color: green;'>✓ users表创建成功</p>";
     } else {
@@ -163,7 +163,7 @@ if (!in_array('type', $existing_goto_columns)) {
     $alter_sql = "ALTER TABLE go_to_url ADD COLUMN `type` VARCHAR(10) DEFAULT 'url' AFTER `url`";
     if (mysqli_query($conn, $alter_sql)) {
         echo "<p style='color: green;'>✓ 已添加type字段到go_to_url表</p>";
-        
+
         // 为现有数据设置默认类型
         $update_sql = "UPDATE go_to_url SET type = 'url' WHERE type IS NULL OR type = ''";
         if (mysqli_query($conn, $update_sql)) {
@@ -202,14 +202,14 @@ if (mysqli_num_rows($admin_check) == 0) {
     while ($row = mysqli_fetch_assoc($users_columns)) {
         $existing_columns[] = $row['Field'];
     }
-    
+
     // 根据表结构动态构建插入语句
     if (in_array('email', $existing_columns)) {
         $insert_admin_sql = "INSERT INTO `users` (`username`, `password`, `email`, `ugroup`) VALUES ('$admin_username', '$admin_password', 'admin@localhost', 'admin')";
     } else {
         $insert_admin_sql = "INSERT INTO `users` (`username`, `password`, `ugroup`) VALUES ('$admin_username', '$admin_password', 'admin')";
     }
-    
+
     if (mysqli_query($conn, $insert_admin_sql)) {
         echo "<p style='color: green;'>✓ 管理员账户创建成功</p>";
     } else {
@@ -235,7 +235,7 @@ if (mysqli_num_rows($session_table_check) == 0) {
         KEY `user_id` (`user_id`),
         KEY `expires_at` (`expires_at`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-    
+
     if (mysqli_query($conn, $create_session_sql)) {
         echo "<p style='color: green;'>✓ user_sessions表创建成功</p>";
     } else {
@@ -267,7 +267,7 @@ if (mysqli_num_rows($settings_table_check) > 0) {
         UNIQUE KEY `setting_key` (`setting_key`),
         KEY `category` (`category`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-    
+
     if (mysqli_query($conn, $create_settings_sql)) {
         echo "<p style='color: green;'>✓ settings表创建成功</p>";
     } else {
@@ -374,7 +374,7 @@ foreach ($default_settings as $setting) {
     // 检查设置是否已存在
     $check_sql = "SELECT id FROM settings WHERE setting_key = '" . $setting['setting_key'] . "'";
     $check_result = mysqli_query($conn, $check_sql);
-    
+
     if (mysqli_num_rows($check_result) == 0) {
         $insert_sql = "INSERT INTO settings (setting_key, setting_value, setting_type, setting_name, setting_description, category) VALUES (
             '" . $setting['setting_key'] . "',
@@ -384,7 +384,7 @@ foreach ($default_settings as $setting) {
             '" . $setting['setting_description'] . "',
             '" . $setting['category'] . "'
         )";
-        
+
         if (mysqli_query($conn, $insert_sql)) {
             echo "<p style='color: green;'>✓ 已添加设置: " . $setting['setting_name'] . "</p>";
         } else {
