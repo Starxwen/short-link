@@ -158,16 +158,17 @@ $my_url = 'https://your-domain.com/'; // 网站根URL
 
 **Apache (.htaccess)**：
 ```apache
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([a-zA-Z0-9]+)$ index.php?id=$1 [L]
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^([^/]+)$ index.php?dest=$1 [L,QSA]
+</IfModule>
 ```
 
 **Nginx**：
 ```nginx
-location / {
-    try_files $uri $uri/ /index.php?id=$uri&$args;
+location ~ ^/([a-zA-Z0-9]+)$ {
+    rewrite ^/([a-zA-Z0-9]+)$ /index.php?dest=$1 last;
 }
 ```
 
