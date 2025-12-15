@@ -43,10 +43,18 @@ function getClientIp()
     return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
 }
 if (isset($_POST['url'])) {
-    if (strpos($_POST['url'], 'http') !== false) {
-        echo '';
-    } else {
-        die('链接必须使用 http://或https:// 开头');
+    // 判断输入内容是URL还是文本
+    $input_content = $_POST['url'];
+    $content_type = 'text'; // 默认为文本类型
+    
+    // 检查是否为有效的URL
+    if (filter_var($input_content, FILTER_VALIDATE_URL) && strpos($input_content, 'http') === 0) {
+        $content_type = 'url';
+    }
+    
+    // 如果既不是URL也不是有效文本，则返回错误
+    if (empty(trim($input_content))) {
+        die('输入内容不能为空');
     }
 
     $conn = mysqli_connect($dbhost, $dbuser, $dbpass);
@@ -57,7 +65,7 @@ if (isset($_POST['url'])) {
 
     mysqli_query($conn, "set names utf8");
 
-    $t = addcslashes(mysqli_real_escape_string($conn, base64_encode($_POST['url'])), "%_");
+    $t = addcslashes(mysqli_real_escape_string($conn, base64_encode($input_content)), "%_");
     $ip_t = getClientIp();
     $short = generateRandomString(); // 生成随机字符串
 
@@ -84,7 +92,7 @@ if (isset($_POST['url'])) {
         }
     }
 
-    // 检查是否已存在相同的URL（对于同一用户）
+    // 检查是否已存在相同的内容（对于同一用户）
     $sql = "select short_url from go_to_url where url='$t' AND uid = $user_id";
 
     mysqli_select_db($conn, $dbname);
@@ -92,9 +100,9 @@ if (isset($_POST['url'])) {
 
     if ($retval->num_rows == 0) {
         $sql = "INSERT INTO go_to_url " .
-            "(url,short_url,ip,add_date,uid) " .
+            "(url,type,short_url,ip,add_date,uid) " .
             "VALUES " .
-            "('$t','$short','$ip_t',NOW(),$user_id)";
+            "('$t','$content_type','$short','$ip_t',NOW(),$user_id)";
 
         $retval = mysqli_query($conn, $sql);
 

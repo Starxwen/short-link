@@ -6,11 +6,12 @@ header("content-type:text/html;charset=utf-8");
 // 1. 用户功能添加
 // 2. 邮箱验证功能
 // 3. 系统设置表创建
+// 4. 文本内容支持（短链接可支持URL和文本内容）
 
 include 'config.php';
 
 echo "<h2>星跃短链接系统 - 统一数据库更新脚本</h2>";
-echo "<p>此脚本将为系统添加完整的用户功能、邮箱验证功能和系统设置管理</p>";
+echo "<p>此脚本将为系统添加完整的用户功能、邮箱验证功能、系统设置管理和文本内容支持</p>";
 
 // 连接数据库
 $conn = mysqli_connect($dbhost, $dbuser, $dbpass);
@@ -155,6 +156,26 @@ if (!in_array('click_count', $existing_goto_columns)) {
     }
 } else {
     echo "<p style='color: green;'>✓ go_to_url表已包含click_count字段</p>";
+}
+
+// 检查并添加type字段
+if (!in_array('type', $existing_goto_columns)) {
+    $alter_sql = "ALTER TABLE go_to_url ADD COLUMN `type` VARCHAR(10) DEFAULT 'url' AFTER `url`";
+    if (mysqli_query($conn, $alter_sql)) {
+        echo "<p style='color: green;'>✓ 已添加type字段到go_to_url表</p>";
+        
+        // 为现有数据设置默认类型
+        $update_sql = "UPDATE go_to_url SET type = 'url' WHERE type IS NULL OR type = ''";
+        if (mysqli_query($conn, $update_sql)) {
+            echo "<p style='color: green;'>✓ 已为现有数据设置默认类型</p>";
+        } else {
+            echo "<p style='color: orange;'>⚠ 设置默认类型失败: " . mysqli_error($conn) . "</p>";
+        }
+    } else {
+        echo "<p style='color: red;'>✗ 添加type字段失败: " . mysqli_error($conn) . "</p>";
+    }
+} else {
+    echo "<p style='color: green;'>✓ go_to_url表已包含type字段</p>";
 }
 
 // 检查并添加uid索引
@@ -388,6 +409,7 @@ echo "<li>SMTP邮件配置</li>";
 echo "<li>注册设置管理</li>";
 echo "<li>邮箱验证功能</li>";
 echo "<li>4位随机验证码</li>";
+echo "<li>文本内容支持（短链接可存储和显示文本内容）</li>";
 echo "</ul>";
 echo "<p><strong>重要提示：</strong></p>";
 echo "<ol>";

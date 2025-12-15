@@ -338,7 +338,7 @@ $site_name = Settings::getSiteName();
         </div>
         
         <div class="input-group">
-            <input class='layui-input' type='text' id='t' placeholder="请输入您的长链接（必须以 http:// 或 https:// 开头）" value='' />
+            <input class='layui-input' type='text' id='t' placeholder="请输入URL链接或文本内容（URL必须以 http:// 或 https:// 开头）" value='' />
         </div>
         
         <button class="btn-generate" id='b'>
@@ -403,20 +403,37 @@ $site_name = Settings::getSiteName();
 
     <script>
         $(function () {
-            re = /http/;
             $("#b").click(function () {
-                if (re.test($('#t').val())) {
-                    $.post("add.php", { 'url': $('#t').val() }, function (data, status) {
-                        // 更新结果显示
-                        $('#aaa').find('.result-box').html("<input class='layui-input' type='text' value='" + data + "' readonly />");
-                        $('#aaa').addClass('show');
-                        
-                        // 生成二维码
-                        generateQRCode(data);
-                    });
-                } else {
-                    layer.msg('链接不规范，必须使用 http:// 或 https:// 开头', {icon: 2});
+                var inputValue = $('#t').val().trim();
+                
+                // 检查输入是否为空
+                if (inputValue === '') {
+                    layer.msg('输入内容不能为空', {icon: 2});
+                    return;
                 }
+                
+                // 检查是否为URL格式
+                var isUrl = /^https?:\/\//.test(inputValue);
+                
+                // 如果是URL，验证格式
+                if (isUrl) {
+                    try {
+                        new URL(inputValue);
+                    } catch (e) {
+                        layer.msg('URL格式不正确，必须以 http:// 或 https:// 开头', {icon: 2});
+                        return;
+                    }
+                }
+                
+                // 发送请求
+                $.post("add.php", { 'url': inputValue }, function (data, status) {
+                    // 更新结果显示
+                    $('#aaa').find('.result-box').html("<input class='layui-input' type='text' value='" + data + "' readonly />");
+                    $('#aaa').addClass('show');
+                    
+                    // 生成二维码
+                    generateQRCode(data);
+                });
             });
             
             // 生成二维码函数
