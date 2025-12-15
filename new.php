@@ -195,6 +195,7 @@ $site_name = Settings::getSiteName();
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #e0e0e0;
+            margin-bottom: 15px;
         }
         
         .result-box input {
@@ -203,6 +204,43 @@ $site_name = Settings::getSiteName();
             padding: 12px 15px;
             font-size: 15px;
             background: transparent;
+        }
+        
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .qr-title {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 10px;
+        }
+        
+        .qr-code {
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .qr-code img {
+            display: block;
+            max-width: 200px;
+            height: auto;
+        }
+        
+        .qr-tip {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 10px;
+            text-align: center;
         }
         
         .auth-buttons {
@@ -349,6 +387,13 @@ $site_name = Settings::getSiteName();
             <div class="result-box">
                 <!-- 结果将通过JavaScript动态插入 -->
             </div>
+            <div class="qr-container" id="qr-container" style="display: none;">
+                <div class="qr-title">扫描二维码快速访问：</div>
+                <div class="qr-code">
+                    <img id="qr-image" src="" alt="二维码">
+                </div>
+                <div class="qr-tip">使用手机扫描上方二维码即可访问短链接</div>
+            </div>
         </div>
         
         <div class="footer">
@@ -362,13 +407,29 @@ $site_name = Settings::getSiteName();
             $("#b").click(function () {
                 if (re.test($('#t').val())) {
                     $.post("add.php", { 'url': $('#t').val() }, function (data, status) {
-                        $('#aaa').html("<div class='result-title'>您的短链接已生成：</div><div class='result-box'><input class='layui-input' type='text' value='" + data + "' readonly /></div>");
+                        // 更新结果显示
+                        $('#aaa').find('.result-box').html("<input class='layui-input' type='text' value='" + data + "' readonly />");
                         $('#aaa').addClass('show');
+                        
+                        // 生成二维码
+                        generateQRCode(data);
                     });
                 } else {
                     layer.msg('链接不规范，必须使用 http:// 或 https:// 开头', {icon: 2});
                 }
             });
+            
+            // 生成二维码函数
+            function generateQRCode(url) {
+                // 使用第三方API生成二维码
+                var qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url);
+                
+                // 设置二维码图片
+                $('#qr-image').attr('src', qrApiUrl);
+                
+                // 显示二维码容器
+                $('#qr-container').fadeIn();
+            }
         });
     </script>
 </body>
