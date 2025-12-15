@@ -30,8 +30,8 @@ if ($ugroup !== 'admin' && $ugroup !== 'user') {
     die(json_encode(['error' => '无效的用户组']));
 }
 
-// 验证邮箱格式
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+// 验证邮箱格式（如果邮箱不为空）
+if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     die(json_encode(['error' => '无效的邮箱格式']));
 }
 

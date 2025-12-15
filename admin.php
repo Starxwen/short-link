@@ -836,76 +836,97 @@ if (!isset($_SESSION['user_group']) || ($_SESSION['user_group'] !== 'admin' && $
 
             // 编辑用户信息
             function editUser(uid, username, email, ugroup) {
-                layui.use('layer', function(){
+                layui.use(['layer', 'form'], function(){
                     var layer = layui.layer;
+                    var form = layui.form;
+                    
+                    // 创建表单HTML
+                    var formHtml = '<div style="padding: 20px;">' +
+                                  '<form class="layui-form" id="edit-user-form" lay-filter="editUserForm">' +
+                                  '<div class="layui-form-item">' +
+                                  '<label class="layui-form-label">用户ID</label>' +
+                                  '<div class="layui-input-block">' +
+                                  '<input type="text" name="uid" value="' + uid + '" readonly class="layui-input">' +
+                                  '</div>' +
+                                  '</div>' +
+                                  '<div class="layui-form-item">' +
+                                  '<label class="layui-form-label">用户名</label>' +
+                                  '<div class="layui-input-block">' +
+                                  '<input type="text" name="username" value="' + username + '" required lay-verify="required" class="layui-input">' +
+                                  '</div>' +
+                                  '</div>' +
+                                  '<div class="layui-form-item">' +
+                                  '<label class="layui-form-label">邮箱</label>' +
+                                  '<div class="layui-input-block">' +
+                                  '<input type="email" name="email" value="' + email + '" required lay-verify="required|email" class="layui-input">' +
+                                  '</div>' +
+                                  '</div>' +
+                                  '<div class="layui-form-item">' +
+                                  '<label class="layui-form-label">用户组</label>' +
+                                  '<div class="layui-input-block">' +
+                                  '<select name="ugroup" lay-verify="required">' +
+                                  '<option value="user" ' + (ugroup === 'user' ? 'selected' : '') + '>普通用户</option>' +
+                                  '<option value="admin" ' + (ugroup === 'admin' ? 'selected' : '') + '>管理员</option>' +
+                                  '</select>' +
+                                  '</div>' +
+                                  '</div>' +
+                                  '<div class="layui-form-item">' +
+                                  '<div class="layui-input-block">' +
+                                  '<button type="button" class="layui-btn" id="save-user-btn">保存修改</button>' +
+                                  '<button type="button" class="layui-btn layui-btn-primary" onclick="layer.closeAll()">取消</button>' +
+                                  '</div>' +
+                                  '</div>' +
+                                  '</form>' +
+                                  '</div>';
                     
                     layer.open({
                         type: 1,
                         title: '编辑用户信息',
                         area: ['500px', '400px'],
-                        content: '<div style="padding: 20px;">' +
-                                '<form id="edit-user-form" lay-filter="editUserForm">' +
-                                '<div class="layui-form-item">' +
-                                '<label class="layui-form-label">用户ID</label>' +
-                                '<div class="layui-input-block">' +
-                                '<input type="text" name="uid" value="' + uid + '" readonly class="layui-input">' +
-                                '</div>' +
-                                '</div>' +
-                                '<div class="layui-form-item">' +
-                                '<label class="layui-form-label">用户名</label>' +
-                                '<div class="layui-input-block">' +
-                                '<input type="text" name="username" value="' + username + '" required lay-verify="required" class="layui-input">' +
-                                '</div>' +
-                                '</div>' +
-                                '<div class="layui-form-item">' +
-                                '<label class="layui-form-label">邮箱</label>' +
-                                '<div class="layui-input-block">' +
-                                '<input type="email" name="email" value="' + email + '" required lay-verify="required|email" class="layui-input">' +
-                                '</div>' +
-                                '</div>' +
-                                '<div class="layui-form-item">' +
-                                '<label class="layui-form-label">用户组</label>' +
-                                '<div class="layui-input-block">' +
-                                '<select name="ugroup" lay-verify="required">' +
-                                '<option value="user" ' + (ugroup === 'user' ? 'selected' : '') + '>普通用户</option>' +
-                                '<option value="admin" ' + (ugroup === 'admin' ? 'selected' : '') + '>管理员</option>' +
-                                '</select>' +
-                                '</div>' +
-                                '</div>' +
-                                '<div class="layui-form-item">' +
-                                '<div class="layui-input-block">' +
-                                '<button type="submit" class="layui-btn" lay-submit lay-filter="editUserSubmit">保存修改</button>' +
-                                '<button type="button" class="layui-btn layui-btn-primary" onclick="layer.closeAll()">取消</button>' +
-                                '</div>' +
-                                '</div>' +
-                                '</form>' +
-                                '</div>',
+                        content: formHtml,
                         success: function(layero, index){
                             // 渲染表单
-                            layui.use('form', function(){
-                                var form = layui.form;
-                                form.render();
+                            form.render();
+                            
+                            // 绑定保存按钮点击事件
+                            $('#save-user-btn').on('click', function(){
+                                // 手动获取表单数据
+                                var formData = {
+                                    uid: $('#edit-user-form input[name="uid"]').val(),
+                                    username: $('#edit-user-form input[name="username"]').val().trim(),
+                                    email: $('#edit-user-form input[name="email"]').val().trim(),
+                                    ugroup: $('#edit-user-form select[name="ugroup"]').val()
+                                };
                                 
-                                // 监听提交
-                                form.on('submit(editUserSubmit)', function(data){
-                                    $.ajax({
-                                        type: "POST",
-                                        url: "ajax/update_user.php",
-                                        data: data.field,
-                                        success: function (response) {
-                                            if (response.success) {
-                                                layer.msg('用户信息更新成功', {icon: 1});
-                                                layer.closeAll();
-                                                loadUsers(usersCurrentPage);
-                                            } else {
-                                                layer.msg('更新失败: ' + (response.error || '未知错误'), {icon: 2});
-                                            }
-                                        },
-                                        error: function (error) {
+                                // 验证数据
+                                if (!formData.uid || !formData.username || !formData.ugroup) {
+                                    layer.msg('用户ID、用户名和用户组是必填的', {icon: 2});
+                                    return;
+                                }
+                                
+                                // 发送AJAX请求
+                                $.ajax({
+                                    type: "POST",
+                                    url: "ajax/update_user.php",
+                                    data: formData,
+                                    dataType: 'json',
+                                    success: function (response) {
+                                        if (response.success) {
+                                            layer.msg('用户信息更新成功', {icon: 1});
+                                            layer.closeAll();
+                                            loadUsers(usersCurrentPage);
+                                        } else {
+                                            layer.msg('更新失败: ' + (response.error || '未知错误'), {icon: 2});
+                                        }
+                                    },
+                                    error: function (xhr, status, error) {
+                                        try {
+                                            var response = JSON.parse(xhr.responseText);
+                                            layer.msg('更新失败: ' + (response.error || '未知错误'), {icon: 2});
+                                        } catch(e) {
                                             layer.msg('更新失败: ' + error, {icon: 2});
                                         }
-                                    });
-                                    return false; // 阻止表单跳转
+                                    }
                                 });
                             });
                         }

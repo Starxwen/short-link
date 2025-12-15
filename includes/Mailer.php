@@ -3,6 +3,10 @@
  * 邮件发送类
  * 支持SMTP邮件发送
  */
+
+// 加载PHPMailer
+require_once __DIR__ . '/../vendor/autoload.php';
+
 class Mailer {
     private $smtp_host;
     private $smtp_port;
@@ -70,6 +74,13 @@ class Mailer {
         // 检查SMTP设置是否完整
         if (empty($this->smtp_host) || empty($this->smtp_username) || empty($this->smtp_password)) {
             return false;
+        }
+        
+        // 优先使用阿里企业邮箱专用发送器
+        if (file_exists(__DIR__ . '/AliyunMailer.php')) {
+            include_once __DIR__ . '/AliyunMailer.php';
+            $aliyun_mailer = new AliyunMailer();
+            return $aliyun_mailer->send($to, $subject, $body, $is_html);
         }
         
         // 使用PHPMailer发送邮件（如果可用）

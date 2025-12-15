@@ -1,13 +1,16 @@
 <?php
 header("content-type:text/html;charset=utf-8");
 
-// 数据库更新脚本 - 为现有短链接系统添加用户功能
-// 此脚本用于更新已部署的系统
+// 星跃短链接系统 - 统一数据库更新脚本
+// 此脚本整合了所有数据库更新功能，包括：
+// 1. 用户功能添加
+// 2. 邮箱验证功能
+// 3. 系统设置表创建
 
 include 'config.php';
 
-echo "<h2>星跃短链接系统 - 数据库更新脚本</h2>";
-echo "<p>此脚本将为现有系统添加完整的用户功能</p>";
+echo "<h2>星跃短链接系统 - 统一数据库更新脚本</h2>";
+echo "<p>此脚本将为系统添加完整的用户功能、邮箱验证功能和系统设置管理</p>";
 
 // 连接数据库
 $conn = mysqli_connect($dbhost, $dbuser, $dbpass);
@@ -18,7 +21,7 @@ if (!$conn) {
 mysqli_query($conn, "set names utf8");
 mysqli_select_db($conn, $dbname);
 
-echo "<h3>步骤1: 检查现有表结构</h3>";
+echo "<h3>步骤1: 检查并更新用户表结构</h3>";
 
 // 检查users表是否存在
 $users_table_check = mysqli_query($conn, "SHOW TABLES LIKE 'users'");
@@ -58,36 +61,47 @@ if (mysqli_num_rows($users_table_check) > 0) {
         }
     }
     
-    if (!in_array('created_at', $existing_columns)) {
-        $alter_sql = "ALTER TABLE users ADD COLUMN `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP AFTER `ugroup`";
-        if (mysqli_query($conn, $alter_sql)) {
-            echo "<p style='color: green;'>✓ 已添加created_at字段到users表</p>";
-        } else {
-            echo "<p style='color: red;'>✗ 添加created_at字段失败: " . mysqli_error($conn) . "</p>";
+    // 添加其他基础字段
+    $basic_fields = [
+        'created_at' => "DATETIME DEFAULT CURRENT_TIMESTAMP AFTER `ugroup`",
+        'last_login' => "DATETIME NULL AFTER `created_at`",
+        'status' => "TINYINT DEFAULT 1 COMMENT '1:正常 0:禁用' AFTER `last_login`"
+    ];
+    
+    foreach ($basic_fields as $field => $definition) {
+        if (!in_array($field, $existing_columns)) {
+            $alter_sql = "ALTER TABLE users ADD COLUMN `$field` $definition";
+            if (mysqli_query($conn, $alter_sql)) {
+                echo "<p style='color: green;'>✓ 已添加 $field 字段到users表</p>";
+            } else {
+                echo "<p style='color: red;'>✗ 添加 $field 字段失败: " . mysqli_error($conn) . "</p>";
+            }
         }
     }
     
-    if (!in_array('last_login', $existing_columns)) {
-        $alter_sql = "ALTER TABLE users ADD COLUMN `last_login` DATETIME NULL AFTER `created_at`";
-        if (mysqli_query($conn, $alter_sql)) {
-            echo "<p style='color: green;'>✓ 已添加last_login字段到users表</p>";
-        } else {
-            echo "<p style='color: red;'>✗ 添加last_login字段失败: " . mysqli_error($conn) . "</p>";
-        }
-    }
+    // 添加邮箱验证相关字段
+    $email_fields = [
+        'email_verified' => "TINYINT DEFAULT 0 COMMENT '0:未验证 1:已验证'",
+        'verification_code' => "VARCHAR(64) DEFAULT '' COMMENT '邮箱验证码'",
+        'verification_expires' => "DATETIME NULL COMMENT '验证码过期时间'"
+    ];
     
-    if (!in_array('status', $existing_columns)) {
-        $alter_sql = "ALTER TABLE users ADD COLUMN `status` TINYINT DEFAULT 1 COMMENT '1:正常 0:禁用' AFTER `last_login`";
-        if (mysqli_query($conn, $alter_sql)) {
-            echo "<p style='color: green;'>✓ 已添加status字段到users表</p>";
+    foreach ($email_fields as $field => $definition) {
+        if (!in_array($field, $existing_columns)) {
+            $alter_sql = "ALTER TABLE users ADD COLUMN `$field` $definition";
+            if (mysqli_query($conn, $alter_sql)) {
+                echo "<p style='color: green;'>✓ 已添加 $field 字段到users表</p>";
+            } else {
+                echo "<p style='color: red;'>✗ 添加 $field 字段失败: " . mysqli_error($conn) . "</p>";
+            }
         } else {
-            echo "<p style='color: red;'>✗ 添加status字段失败: " . mysqli_error($conn) . "</p>";
+            echo "<p style='color: orange;'>⚠ $field 字段已存在</p>";
         }
     }
 } else {
     echo "<p style='color: orange;'>⚠ users表不存在，将创建新表</p>";
     
-    // 创建users表
+    // 创建users表（包含所有字段）
     $create_users_sql = "CREATE TABLE `users` (
         `uid` INT NOT NULL AUTO_INCREMENT,
         `username` VARCHAR(64) NOT NULL,
@@ -97,6 +111,9 @@ if (mysqli_num_rows($users_table_check) > 0) {
         `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
         `last_login` DATETIME NULL,
         `status` TINYINT DEFAULT 1 COMMENT '1:正常 0:禁用',
+        `email_verified` TINYINT DEFAULT 0 COMMENT '0:未验证 1:已验证',
+        `verification_code` VARCHAR(64) DEFAULT '' COMMENT '邮箱验证码',
+        `verification_expires` DATETIME NULL COMMENT '验证码过期时间',
         PRIMARY KEY (`uid`),
         UNIQUE KEY `username` (`username`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
@@ -108,7 +125,7 @@ if (mysqli_num_rows($users_table_check) > 0) {
     }
 }
 
-echo "<h3>步骤2: 检查go_to_url表结构</h3>";
+echo "<h3>步骤2: 检查并更新go_to_url表结构</h3>";
 
 // 检查go_to_url表
 $goto_columns = mysqli_query($conn, "SHOW COLUMNS FROM go_to_url");
@@ -134,13 +151,6 @@ echo "<h3>步骤3: 检查管理员账户</h3>";
 $admin_check = mysqli_query($conn, "SELECT * FROM users WHERE username = '$admin_username' AND ugroup = 'admin'");
 if (mysqli_num_rows($admin_check) == 0) {
     // 检查users表是否有email字段
-    $users_columns = mysqli_query($conn, "SHOW COLUMNS FROM users");
-    $existing_columns = [];
-    while ($row = mysqli_fetch_assoc($users_columns)) {
-        $existing_columns[] = $row['Field'];
-    }
-    
-    // 重新获取更新后的字段列表
     $users_columns = mysqli_query($conn, "SHOW COLUMNS FROM users");
     $existing_columns = [];
     while ($row = mysqli_fetch_assoc($users_columns)) {
@@ -350,6 +360,7 @@ echo "<li>会话管理</li>";
 echo "<li>系统设置管理</li>";
 echo "<li>SMTP邮件配置</li>";
 echo "<li>注册设置管理</li>";
+echo "<li>邮箱验证功能</li>";
 echo "</ul>";
 echo "<p><strong>重要提示：</strong></p>";
 echo "<ol>";
@@ -357,6 +368,7 @@ echo "<li>请删除此更新脚本文件以确保安全</li>";
 echo "<li>请确保register.php和user_panel.php文件已创建</li>";
 echo "<li>测试用户注册和登录功能</li>";
 echo "<li>在管理面板的系统设置中配置SMTP设置以启用邮件功能</li>";
+echo "<li>测试注册和邮箱验证功能</li>";
 echo "</ol>";
 
 mysqli_close($conn);
